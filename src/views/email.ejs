@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Template</title>
+    <style>
+      /* Reset CSS */
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+      }
+
+      /* Container styles */
+      .container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      /* Body styles */
+      .body {
+        padding: 20px;
+        background-color: #ffffff;
+        border: 1px solid #dddddd;
+      }
+
+      /* Content styles */
+      .content {
+        margin-bottom: 20px;
+      }
+      .content a {
+        text-decoration: none;
+        list-style: none;
+        color: black;
+      }
+
+      /* Footer styles */
+      .footer {
+        background-color: #f2f2f2;
+        padding: 20px;
+        text-align: center;
+      }
+
+      /* Responsive styles */
+      @media screen and (max-width: 600px) {
+        .container {
+          padding: 10px;
+        }
+        .body {
+          padding: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Body -->
+      <div class="body">
+        <p>Dear <%= username %>,</p>
+        <div class="content">
+          <p>
+            Your Token no is generated Successfully. You can check the status of
+            your problem by simply copying and pasting the token no on our
+            website
+            <a href="http://www.digivistainfotech.com"
+              >www.digivistainfotech.com</a
+            >.
+          </p>
+        </div>
+        <p>Token No - <%= ticket%></p>
+        <p>Thanks,</p>
+        <p>Digivista infotech pvt ltd</p>
+      </div>
+    </div>
+  </body>
+</html>
