@@ -71,7 +71,7 @@ const Login = async (userData) => {
     if (!user) {
       throw new ErrorHandler("User is not registered", 401);
     }
-    console.log("user is login  secction", user);
+    // console.log("user is login  secction", user);
     // Check if a password is required
 
     // Assuming user.comparePassword() is an asynchronous function
@@ -84,7 +84,7 @@ const Login = async (userData) => {
     // if (!user.isVerified) {
     //   throw new ErrorHandler("First Verify the email", 401);
     // }
-    console.log(" login user", user);
+    // console.log(" login user", user);
     return user;
   } catch (error) {
     throw new ErrorHandler(error.message);
