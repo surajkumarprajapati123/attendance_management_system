@@ -1,32 +1,39 @@
 const mongoose = require("mongoose");
 
-const leaveApplicationSchema = new mongoose.Schema({
-  employeeId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "user",
+const leaveApplicationSchema = new mongoose.Schema(
+  {
+    employeeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+    },
+    startDate: {
+      type: String,
+      required: true,
+    },
+    endDate: {
+      type: String,
+      required: true,
+    },
+    reason: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    application_no: {
+      type: String,
+      default: "12345",
+    },
+    DateAndtime: {
+      type: Date,
+      default: Date.now(),
+    },
   },
-  startDate: {
-    type: String,
-    required: true,
-  },
-  endDate: {
-    type: String,
-    required: true,
-  },
-  reason: {
-    type: String,
-    required: true,
-  },
-  status: {
-    type: String,
-    enum: ["pending", "approved", "rejected"],
-    default: "pending",
-  },
-  application_no: {
-    type: String,
-    default: "12345",
-  },
-});
+  { timestamps: true }
+);
 
 const LeaveApplication = mongoose.model(
   "LeaveApplication",

@@ -20,6 +20,9 @@ router
   .route("/approved")
   .get(AdminAuth, LeaveController.GetAllApprovedAppicationList);
 router.route("/search").get(Auth, LeaveController.SerchByApplicationNumber);
+router.route("/reject/:id").put(AdminAuth, LeaveController.RejectAppliction);
+router.route("/approve/:id").put(AdminAuth, LeaveController.ApprovedAppliction);
+router.route("/re-apply").post(Auth, LeaveController.ReApplicationApply);
 
 module.exports = router;
 
@@ -202,6 +205,72 @@ module.exports = router;
  *         description: Leave application not found
  *       401:
  *         description: Unauthorized, invalid or expired token
+ *       500:
+ *         description: Internal server error
+ */
+// Reject leave by admin
+/**
+ * @swagger
+ * /leave/reject/{id}:
+ *   put:
+ *     summary: Reject leave application by ID (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the leave application to reject
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reason
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Reason for rejecting the leave application
+ *     responses:
+ *       200:
+ *         description: Leave application rejected successfully
+ *       401:
+ *         description: Unauthorized, invalid, or expired token
+ *       404:
+ *         description: Leave application not found
+ *       500:
+ *         description: Internal server error
+ */
+
+// approved Application by admin
+
+/**
+ * @swagger
+ * /leave/approve/{id}:
+ *   put:
+ *     summary: Approve leave application by ID (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: ID of the leave application to approve
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Leave application approved successfully
+ *       401:
+ *         description: Unauthorized, invalid or expired token
+ *       404:
+ *         description: Leave application not found
  *       500:
  *         description: Internal server error
  */

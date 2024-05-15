@@ -38,6 +38,21 @@ const SerchByApplicationNumber = catchAsync(async (req, res) => {
   );
   ApiResponse(res, 200, "All data  is showing for this applicaiton ", leave);
 });
+
+const RejectAppliction = catchAsync(async (req, res) => {
+  const leave = await LeaveService.RejectedLeave(req.params.id, req.body);
+  ApiResponse(res, 200, "Apllication is Rejected Successfully", undefined);
+});
+const ApprovedAppliction = catchAsync(async (req, res) => {
+  const leave = await LeaveService.ApprovedLeave(req.params.id, req.body);
+  ApiResponse(res, 200, "Apllication is Approved  Successfully", undefined);
+});
+
+const ReApplicationApply = catchAsync(async (req, res) => {
+  const data = LeaveService.ReApplyApplication(req.user._id, req.body);
+  ApiResponse(res, 200, "Again Application Apply Successfully", data);
+});
+
 module.exports = {
   ApplyLeave,
   updateApplicationById,
@@ -46,4 +61,7 @@ module.exports = {
   GetAllRejectApplicationList,
   GetAllApprovedAppicationList,
   SerchByApplicationNumber,
+  RejectAppliction,
+  ApprovedAppliction,
+  ReApplicationApply,
 };
