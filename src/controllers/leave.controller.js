@@ -1,0 +1,49 @@
+const { LeaveService } = require("../service");
+const ApiResponse = require("../utils/ApiResponse");
+const catchAsync = require("../utils/CatchAsync");
+
+const ApplyLeave = catchAsync(async (req, res) => {
+  const leave = await LeaveService.ApplyLeave(req.user._id, req.body);
+  ApiResponse(res, 201, "Leave Application is Create Successfully", leave);
+});
+
+const updateApplicationById = catchAsync(async (req, res) => {
+  const leave = LeaveService.updateApplicationByid(req.user._id, req.body);
+  ApiResponse(res, 200, "Application is updated Successfully", leave);
+});
+
+const UpdateApplicationByAllicaitonNumber = catchAsync(async (req, res) => {
+  const leave = await LeaveService.updateApplicationByApplicationID(req.body);
+  ApiResponse(res, 200, "Application is updated Successsfully", leave);
+});
+
+const GetAllPendingApplicationList = catchAsync(async (req, res) => {
+  const leave = await LeaveService.getPendingAllApplicationList();
+  ApiResponse(res, 200, "Application is fetching Sucessfully", leave);
+});
+
+const GetAllRejectApplicationList = catchAsync(async (req, res) => {
+  const leave = await LeaveService.getrejectedAllApplicationList();
+  ApiResponse(res, 200, "Application is fetching Successfully", leave);
+});
+
+const GetAllApprovedAppicationList = catchAsync(async (req, res) => {
+  const leave = await LeaveService.getapprovedAllApplicationList();
+  ApiResponse(res, 200, "Application is fetching Successfully", leave);
+});
+
+const SerchByApplicationNumber = catchAsync(async (req, res) => {
+  const leave = await LeaveService.SearchbyApplicationNumber(
+    req.query.application_no
+  );
+  ApiResponse(res, 200, "All data  is showing for this applicaiton ", leave);
+});
+module.exports = {
+  ApplyLeave,
+  updateApplicationById,
+  UpdateApplicationByAllicaitonNumber,
+  GetAllPendingApplicationList,
+  GetAllRejectApplicationList,
+  GetAllApprovedAppicationList,
+  SerchByApplicationNumber,
+};
