@@ -37,7 +37,9 @@ const RegisterUser = async (req, userdata) => {
   if (user) {
     throw new ErrorHandler("Already Register User", 401);
   }
-  const avatar = req.files?.avatar[0]?.path;
+  // console.log("req.file", req.file);
+  const avatar = req.file?.path;
+  // console.log("avatart", avatar);
   const avatarimage = await UploadfileOnCloudinary(avatar);
   // console.log("avatarimage is ", avatarimage);
   if (!avatar) {
@@ -81,9 +83,9 @@ const Login = async (userData) => {
       throw new ErrorHandler("Password is incorrect", 401);
     }
 
-    // if (!user.isVerified) {
-    //   throw new ErrorHandler("First Verify the email", 401);
-    // }
+    if (!user.isVerified) {
+      throw new ErrorHandler("First Verify the email", 401);
+    }
     // console.log(" login user", user);
     return user;
   } catch (error) {
@@ -160,11 +162,15 @@ const resetPassword = async (passwordData, token) => {
 };
 
 const getProfile = async (userid) => {
-  const user = await UserModel.findById({ _id: userid });
+  const user = await UserModel.findById({ _id: userid }).select(
+    "-password -_id"
+  );
+  if (user.role == "admin") {
+    throw new ErrorHandler("You can't senn this profile", 401);
+  }
   if (!user) {
     throw new ErrorHandler("User Not found", 401);
   }
-  user.password = undefined;
   return user;
 };
 

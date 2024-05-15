@@ -95,7 +95,6 @@ module.exports = router;
  */
 
 // Register user  Swagger
-
 /**
  * @swagger
  * /user/create:
@@ -105,7 +104,7 @@ module.exports = router;
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:   # Use multipart/form-data for file uploads
  *           schema:
  *             type: object
  *             required:
@@ -113,6 +112,7 @@ module.exports = router;
  *               - email
  *               - password
  *               - username
+ *               - avatar
  *             properties:
  *               name:
  *                 type: string
@@ -127,11 +127,10 @@ module.exports = router;
  *                 format: password
  *                 minLength: 8
  *                 description: At least one number and one letter
- *             example:
- *               name: fake name
- *               username: fake username
- *               email: fake@example.com
- *               password: password1
+ *               avatar:
+ *                 type: string
+ *                 format: binary   # Indicate that this field represents binary data (file)
+ *                 description: Choose an image file for your avatar
  *     responses:
  *       "201":
  *         description: Created
@@ -147,6 +146,7 @@ module.exports = router;
  *       "400":
  *         $ref: '#/components/responses/DuplicateEmail'
  */
+
 /**
  * @swagger
  * /user/login:

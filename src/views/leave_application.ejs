@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leave Application Confirmation</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      p {
+        margin: 0 0 20px;
+      }
+      .highlight {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Leave Application Confirmation</h1>
+      <p>Dear <span class="highlight"><%=username%></span>,</p>
+      <p>
+        We have received your leave application with application number
+        <span class="highlight"><%=application_no%></span>. Below are the
+        details of your leave application:
+      </p>
+      <ul>
+        <li>
+          <span class="highlight">Application Number:</span> <%=application_no%>
+        </li>
+        <li><span class="highlight">Start Date:</span> <%=startDate%></li>
+        <li><span class="highlight">End Date:</span> <%=endDate%></li>
+        <li><span class="highlight">Total Leave :</span> <%=totalleave%></li>
+      </ul>
+      <p>Our team will review your application and get back to you soon.</p>
+      <p>You can trace the Our Application Using Application Number</p>
+      <p>Thank you for using our leave management system.</p>
+      <p>Best regards,<br />[Your Company Name]</p>
+    </div>
+  </body>
+</html>
