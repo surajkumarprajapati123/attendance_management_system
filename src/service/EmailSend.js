@@ -11,7 +11,7 @@ const SendMailWithTemplate = async (mail, otp, username) => {
   try {
     const templatePath = path.join(__dirname, "../views/otp.ejs");
     const data = await ejs.renderFile(templatePath, { otp, username });
-    await SendMailAnywhere(mail, data);
+    await SendMailAnywhere(mail, data, (subject = "Email Verification "));
   } catch (err) {
     console.log(err);
   }
@@ -36,12 +36,97 @@ const SendMailLeaveAppliation = async (
       endDate,
       totalleave,
     });
-    await SendMailAnywhere(mail, data);
+    console.log("data is showing ", data);
+    await SendMailAnywhere(mail, data, (subject = " Leave Application"));
   } catch (error) {
     console.log(error);
   }
 };
 
+const ApprovedApplicationEmailTemplate = async (
+  mail,
+  username,
+  application_no,
+  startDate,
+  endDate,
+  totalLeave
+) => {
+  try {
+    const EmailTemplatePath = path.join(__dirname, "../views/approved.ejs");
+    const data = await ejs.renderFile(EmailTemplatePath, {
+      username,
+      application_no,
+      startDate,
+      endDate,
+      totalLeave,
+    });
+    await SendMailAnywhere(
+      mail,
+      data,
+      (subject = "Approved Leave Application")
+    );
+  } catch (error) {
+    console.log("error is:", error);
+  }
+};
+
+const RejectApplicationEmailTemplate = async (
+  mail,
+  username,
+  application_no,
+  startDate,
+  endDate
+) => {
+  try {
+    const EmailTemplatePath = path.join(__dirname, "../views/reject.ejs");
+    const data = await ejs.renderFile(EmailTemplatePath, {
+      username,
+      application_no,
+      startDate,
+      endDate,
+    });
+    await SendMailAnywhere(
+      mail,
+      data,
+      (subject = "Rejected Leave Application")
+    );
+  } catch (error) {
+    console.log("error is:", error);
+  }
+};
+const TimeApplicationEmailTemplate = async (
+  mail,
+  username,
+  application_no,
+  totalTime
+) => {
+  try {
+    const EmailTemplatePath = path.join(__dirname, "../views/timereapply.ejs");
+    const data = await ejs.renderFile(EmailTemplatePath, {
+      username,
+      application_no,
+
+      totalTime,
+    });
+    await SendMailAnywhere(
+      mail,
+      data,
+      (subject = "Rejected Leave Application")
+    );
+  } catch (error) {
+    console.log("error is:", error);
+  }
+};
+console.log("working 1");
+// ApprovedApplicationEmailTemplate(
+//   "surajkumar@yopmail.com",
+//   "surajkumar",
+//   "SUR003251",
+//   "20/10/2024",
+//   "12/11/2024",
+//   " 8 days"
+// );
+// SendMailWithTemplate("surajkumar@yopmail.com", "123420", "surajkumar");
 const GeneratorOtp = async (emaildata) => {
   const character =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789";
@@ -102,6 +187,9 @@ module.exports = {
   GeneratorOtp,
   SendMailLeaveAppliation,
   SendOnlyEmailForgate,
+  ApprovedApplicationEmailTemplate,
+  RejectApplicationEmailTemplate,
+  TimeApplicationEmailTemplate,
 };
 
 // GeneratorOtp("surajkumar@gmaml.com");

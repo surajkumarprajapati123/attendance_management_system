@@ -1,7 +1,7 @@
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 dotenv.config();
-const SendMailAnywhere = async (mail, data) => {
+const SendMailAnywhere = async (mail, data, subject) => {
   try {
     // const templatePath = path.join(__dirname, "../views/otp.ejs");
     // const data = await ejs.renderFile(templatePath, { otp, username });
@@ -18,7 +18,7 @@ const SendMailAnywhere = async (mail, data) => {
     const mailOptions = {
       from: process.env.EMAIL, // Specify the sender's email address here
       to: mail,
-      subject: "Email Verification",
+      subject: subject,
       html: data,
     };
     await transporter.sendMail(mailOptions, (error, info) => {

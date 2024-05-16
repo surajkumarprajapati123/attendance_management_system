@@ -27,6 +27,10 @@ const leaveApplicationSchema = new mongoose.Schema(
       type: String,
       default: "12345",
     },
+    block: {
+      type: Boolean,
+      default: false,
+    },
     DateAndtime: {
       type: Date,
       default: Date.now(),

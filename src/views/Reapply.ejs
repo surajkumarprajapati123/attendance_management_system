@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Approved Leave Notification</title>
+    <style>
+      /* Inline CSS for styling */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        padding: 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 40px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        color: #333;
+      }
+      p {
+        margin-bottom: 20px;
+        line-height: 1.5;
+      }
+      img {
+        width: 150px; /* Set desired width */
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img
+        src="https://th.bing.com/th/id/OIP.w2mPynL35V1-hOdDwO1Z7gHaHa?rs=1&pid=ImgDetMain"
+        alt="Company Logo"
+      />
+      <h2>Approved Leave Application</h2>
+      <p>Hello <strong><%=username %></strong>,</p>
+      <p>
+        Your previous leave application has been rejected. You can now reapply
+        for leave.
+      </p>
+      <p>Start Date: <strong><%=startDate %></strong></p>
+      <p>End Date: <strong><%=endDate %></strong></p>
+      <p>Total Days: <strong><%=totalLeave %></strong></p>
+      <p>
+        Your Application you can track the application using the application
+        number <strong><%=application_no %></strong>
+      </p>
+      <p>
+        To reapply, please visit our website and submit a new leave application.
+      </p>
+      <p>Thank you.</p>
+    </div>
+  </body>
+</html>
