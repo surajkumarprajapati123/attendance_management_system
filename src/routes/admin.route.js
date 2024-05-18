@@ -11,11 +11,16 @@ router.route("/delete/:id").delete(AdminAuth, AdminController.DeleteUserById);
 router.route("/reset-password").put(AdminAuth, AdminController.resetPassword);
 router.route("/logout").post(AdminAuth, AdminController.LogoutUser);
 router
+  .route("/leave-update")
+  .put(AdminAuth, AdminController.updateAdminLeaveApplication);
+router
   .route("/search")
   .get(AdminAuth, LeaveController.SerchByApplicationNumber);
 router
   .route("/avatar-update")
   .put(AdminAuth, upload.single("avatar"), AdminController.UpdateAdminAvatar);
+router.route("/create").post(AdminAuth, AdminController.ApplyLeaveApplication);
+
 router.get("/test", (req, res) => {
   //   console.log(req.user);
   res.send("testing routng is working");
@@ -262,6 +267,82 @@ module.exports = router;
  *         description: Leave application found
  *       404:
  *         description: Leave application not found
+ *       401:
+ *         description: Unauthorized, invalid or expired token
+ *       500:
+ *         description: Internal server error
+ */
+// update Applicaiotn using id
+/**
+ * @swagger
+ * /admin/leave-update:
+ *   put:
+ *     summary: Update leave application by ID
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Start date of the leave
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 description: End date of the leave
+ *               reason:
+ *                 type: string
+ *                 description: Reason for the leave
+ *     responses:
+ *       200:
+ *         description: Leave application updated successfully
+ *       401:
+ *         description: Unauthorized, invalid, or expired token
+ *       500:
+ *         description: Internal server error
+ */
+// Apply leave Application
+// Apply Leave Application
+/**
+ * @swagger
+ * /admin/create:
+ *   post:
+ *     summary: Apply for leave
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Start date of the leave (DD/MM/YYYY)
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 description: End date of the leave (DD/MM/YYYY)
+ *               reason:
+ *                 type: string
+ *                 description: Reason for the leave
+ *                 example: "Family vacation"
+ *             required:
+ *               - startDate
+ *               - endDate
+ *               - reason
+ *     responses:
+ *       200:
+ *         description: Leave application submitted successfully
  *       401:
  *         description: Unauthorized, invalid or expired token
  *       500:

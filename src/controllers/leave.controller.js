@@ -8,7 +8,11 @@ const ApplyLeave = catchAsync(async (req, res) => {
 });
 
 const updateApplicationById = catchAsync(async (req, res) => {
-  const leave = LeaveService.updateApplicationByid(req.user._id, req.body);
+  const leave = await LeaveService.updateApplicationByid(
+    req.user._id,
+    req.body
+  );
+  console.log("updated application for controller", leave);
   ApiResponse(res, 200, "Application is updated Successfully", leave);
 });
 
@@ -49,7 +53,7 @@ const ApprovedAppliction = catchAsync(async (req, res) => {
 });
 
 const ReApplicationApply = catchAsync(async (req, res) => {
-  const data = LeaveService.ReApplyApplication(req.user._id, req.body);
+  const data = LeaveService.ReapplyLeaveApplication(req.user._id, req.body);
   ApiResponse(res, 200, "Again Application Apply Successfully", data);
 });
 

@@ -22,7 +22,7 @@ router
 router.route("/search").get(Auth, LeaveController.SerchByApplicationNumber);
 router.route("/reject/:id").put(AdminAuth, LeaveController.RejectAppliction);
 router.route("/approve/:id").put(AdminAuth, LeaveController.ApprovedAppliction);
-router.route("/re-apply").post(Auth, LeaveController.ReApplicationApply);
+router.route("/re-apply").put(Auth, LeaveController.ReApplicationApply);
 
 module.exports = router;
 
@@ -90,12 +90,22 @@ module.exports = router;
  *           schema:
  *             type: object
  *             properties:
- *               // Define your request body properties here
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Start date of the leave
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 description: End date of the leave
+ *               reason:
+ *                 type: string
+ *                 description: Reason for the leave
  *     responses:
  *       200:
  *         description: Leave application updated successfully
  *       401:
- *         description: Unauthorized, invalid or expired token
+ *         description: Unauthorized, invalid, or expired token
  *       500:
  *         description: Internal server error
  */
@@ -103,12 +113,19 @@ module.exports = router;
 // update applicaiotn using applicaiotn number
 /**
  * @swagger
- * /leave/update_application_no:
+ * /leave/update_applicaiotn_no/:
  *   put:
  *     summary: Update leave application by application number
  *     tags: [Leave]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: application_no
+ *         required: true
+ *         description: Application number of the leave application to update
+ *         schema:
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -116,12 +133,22 @@ module.exports = router;
  *           schema:
  *             type: object
  *             properties:
- *               // Define your request body properties here
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Start date of the leave
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 description: End date of the leave
+ *               reason:
+ *                 type: string
+ *                 description: Reason for the leave
  *     responses:
  *       200:
  *         description: Leave application updated successfully
  *       401:
- *         description: Unauthorized, invalid or expired token
+ *         description: Unauthorized, invalid, or expired token
  *       500:
  *         description: Internal server error
  */
@@ -193,7 +220,7 @@ module.exports = router;
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: applicationNumber
+ *         name: application_no
  *         required: true
  *         description: Application number of the leave application
  *         schema:
@@ -204,10 +231,11 @@ module.exports = router;
  *       404:
  *         description: Leave application not found
  *       401:
- *         description: Unauthorized, invalid or expired token
+ *         description: Unauthorized, invalid, or expired token
  *       500:
  *         description: Internal server error
  */
+
 // Reject leave by admin
 /**
  * @swagger
@@ -269,6 +297,44 @@ module.exports = router;
  *         description: Leave application approved successfully
  *       401:
  *         description: Unauthorized, invalid or expired token
+ *       404:
+ *         description: Leave application not found
+ *       500:
+ *         description: Internal server error
+ */
+
+// Reapply Leave Application
+/**
+ * @swagger
+ * /leave/re-apply:
+ *   put:
+ *     summary: Re-Apply Leave Application
+ *     tags: [Leave]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 description: Start date of the leave
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 description: End date of the leave
+ *               reason:
+ *                 type: string
+ *                 description: Reason for the leave
+ *     responses:
+ *       200:
+ *         description: Leave application approved successfully
+ *       401:
+ *         description: Unauthorized, invalid, or expired token
  *       404:
  *         description: Leave application not found
  *       500:

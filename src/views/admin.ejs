@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reject Leave Notification</title>
+    <title>Approved Leave Notification</title>
     <style>
       /* Inline CSS for styling */
       body {
@@ -41,11 +41,15 @@
         src="https://th.bing.com/th/id/OIP.w2mPynL35V1-hOdDwO1Z7gHaHa?rs=1&pid=ImgDetMain"
         alt="Company Logo"
       />
-      <!-- <h2>Reject Leave Application</h2> -->
+      <h2>Approved Leave Application</h2>
       <p>Hello <strong><%=username %></strong>,</p>
-      <p>Your Reject Application</p>
+      <p>
+        Your previous leave application has been rejected. You can now reapply
+        for leave.
+      </p>
       <p>Start Date: <strong><%=startDate %></strong></p>
       <p>End Date: <strong><%=endDate %></strong></p>
+      <p>Total Days: <strong><%=totalLeave %></strong></p>
       <p>
         Your Application you can track the application using the application
         number <strong><%=application_no %></strong>
