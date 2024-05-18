@@ -2,6 +2,7 @@ const express = require("express");
 const UserRoutes = require("./user.route");
 const AdminRoutes = require("./admin.route");
 const LeaveRoutes = require("./leave.route");
+const HrRoutes = require("./Hr.route");
 
 const router = express.Router();
 
@@ -17,6 +18,10 @@ const AllRoutes = [
   {
     route: "/leave",
     routes: LeaveRoutes,
+  },
+  {
+    route: "/hr",
+    routes: HrRoutes,
   },
 ];
 

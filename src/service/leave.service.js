@@ -7,7 +7,8 @@ const {
   RejectApplicationEmailTemplate,
   TimeApplicationEmailTemplate,
 } = require("./EmailSend");
-const { date } = require("joi");
+const { UserUpdateWithIdService } = require("./admin.service");
+
 // Function to generate a random string of specified length
 const generateRandomString = (length) => {
   let result = "";
@@ -49,8 +50,18 @@ const isValidDates = (startDate, endDate) => {
 const ApplyLeave = async (userid, usedata) => {
   const { startDate, endDate, reason } = usedata;
   const NewUser = await UserModel.findById(userid);
-  if (NewUser) {
-    throw new ErrorHandler("You are alredy applied for leave", 401);
+  const UserModelId = await LeaveModel.findOne({ employeeId: userid });
+  console.log("find user is ", NewUser);
+
+  if (UserModelId) {
+    throw new ErrorHandler(
+      "You are already for apply leave application,wait for action",
+      401
+    );
+  }
+
+  if (!NewUser) {
+    throw new ErrorHandler("User is not found", 401);
   }
   const GenerateApplicationNumber = generateRandomString(5);
   const Application_Number =
@@ -73,6 +84,7 @@ const ApplyLeave = async (userid, usedata) => {
       400
     );
   }
+
   const user = await LeaveModel.create({
     employeeId: userid,
     startDate,
@@ -80,18 +92,20 @@ const ApplyLeave = async (userid, usedata) => {
     reason,
     application_no: Application_Number,
   });
+  // user._id = undefined;
+  // user.password = undefined;
   if (!user) {
     throw new ErrorHandler("User is not creating", 400);
   }
-  // await SendMailLeaveAppliation(
-  //   NewUser.email,
-  //   NewUser.username,
-  //   Application_Number,
-  //   startDate,
-  //   endDate,
-  // totalleave
-  // );
-  console.log("new leave application user is ", user);
+  await SendMailLeaveAppliation(
+    NewUser.email,
+    NewUser.username,
+    Application_Number,
+    startDate,
+    endDate,
+    totalleave
+  );
+  // console.log("new leave application user is ", user);
   return user;
 };
 const userdata = {
@@ -110,19 +124,25 @@ const updateApplicationByid = async (userid, userdata) => {
       400
     );
   }
-  user = await LeaveModel.findOneAndUpdate({ _id: userid }, userdata, {
+  const leaveModel = await LeaveModel.findOne({ employeeId: userid });
+  // console.log("leave model ", leaveModel);
+  user = await LeaveModel.findOneAndUpdate({ _id: leaveModel._id }, userdata, {
     new: true,
   });
   //   console.log("user id ", user);
   if (!user) {
     throw new ErrorHandler("User is not found", 400);
   }
-  //   console.log("Update user is ", user);
+  // console.log("Update user is ", user);
   return user;
 };
-const updateApplicationByApplicationID = async (userdata) => {
+const updateApplicationByApplicationID = async (userid, userdata) => {
   let user;
   const { startDate, endDate, reason, application_no } = userdata;
+  const useremp = await LeaveModel.findOne({ employeeId: userid });
+  if (!useremp) {
+    throw new ErrorHandler("User not found", 401);
+  }
   if (!isValidDates(startDate, endDate)) {
     throw new ErrorHandler(
       "End date must be at least one day after start date . data formate DD/MM/YYYY",
@@ -182,7 +202,7 @@ const getapprovedAllApplicationList = async () => {
 const SearchbyApplicationNumber = async (Serachdata) => {
   const user = await LeaveModel.find({
     application_no: { $regex: Serachdata, $options: "i" },
-  });
+  }).select("-_id");
 
   console.log("Search user is ", user);
   if (!user) {
@@ -209,7 +229,7 @@ const ApprovedLeave = async (userid) => {
   const data = await LeaveModel.findOne({ employeeId: userid });
   const userdata = await UserModel.findById({ _id: userid });
   const totalleave = calculateDateDifference(data.startDate, data.endDate);
-  console.log("totalleave", totalleave, "second time ", data.endDate);
+  // console.log("totalleave", totalleave, "second time ", data.endDate);
   const useremail = userdata.email;
   const username = userdata.username;
   console.log("data is form approved system ", data);
@@ -238,9 +258,12 @@ const ApprovedLeave = async (userid) => {
 };
 const RejectedLeave = async (userid, userdata1) => {
   const { reason } = userdata1;
-  const leaves = await LeaveModel.findOne({ employeeId: userid });
-  const userdata = await UserModel.findById({ _id: userid });
+  const leaves = await LeaveModel.findById({ _id: userid });
+  console.log("Leave user is ", leaves);
+  const userdata = await UserModel.findById({ _id: leaves.employeeId });
+  console.log("user data is ", userdata);
   const useremail = userdata.email;
+
   const username = userdata.username;
 
   if (!leaves || leaves.length === 0) {
@@ -282,91 +305,75 @@ const SomedataReason = {
 // RejectedLeave("6644857ba91e6ab2bf7de4ff", SomedataReason);
 
 const TimeManagementForApplication = async (userid) => {
-  const data = await LeaveModel.findOne({ employeeId: userid });
-  const userdata = await UserModel.findById({ _id: userid });
-  const useremail = userdata.email;
-  const username = userdata.username;
+  try {
+    const data = await LeaveModel.findOne({ employeeId: userid });
+    console.log("time management data is ", data);
+    const userdata = await UserModel.findById(userid);
+    const useremail = userdata.email;
+    const username = userdata.username;
+    console.log("user data is ", userdata);
+    if (!data) {
+      throw new ErrorHandler("No previous application found", 404);
+    }
 
-  if (!data) {
-    throw new ErrorHandler("No previous application found", 404);
+    const DateAndtime = data.DateAndtime;
+
+    // Calculate time elapsed since the last application
+    const timeElapsed = Date.now() - DateAndtime.getTime();
+    const minutesElapsed = Math.floor(timeElapsed / (60 * 1000));
+    console.log("Time Elapsed (minutes):", minutesElapsed);
+
+    // Calculate remaining time
+    const timeRemaining = (2 - minutesElapsed) * 60 * 1000;
+    console.log("Time remaining (milliseconds):", timeRemaining);
+
+    // If remaining time is negative or zero, no need to schedule anything
+    if (timeRemaining <= 0) {
+      console.log("No action required. Time has already elapsed.");
+      return;
+    }
+
+    // Schedule a job to send a notification after 2 minutes
+    const scheduleTime = new Date(Date.now() + timeRemaining);
+    console.log("Schedule time:", scheduleTime);
+
+    const job = Schedule.scheduleJob(scheduleTime, async () => {
+      data.block = false;
+      await data.save();
+      console.log("data", data);
+      console.log(
+        "2 minutes elapsed. Sending notification email... You can again send Leave application"
+      );
+      // await TimeApplicationEmailTemplate(
+      //   useremail,
+      //   username,
+      //   data.application_no,
+      //   timeRemaining
+      // );
+      // sendNotificationEmail(data.email, "Reapplication Notification", "You can now reapply for leave.");
+    });
+
+    data.block = true;
+    // Calculate the time when the notification will be sent
+    const notificationTime = new Date(Date.now() + timeRemaining);
+    console.log("Notification will be sent at:", notificationTime);
+  } catch (error) {
+    console.error("Error in TimeManagementForApplication:", error.message);
+    throw error; // Re-throwing the error for handling at the caller level
   }
-
-  const DateAndtime = data.DateAndtime;
-  // console.log("date and time is form user  ", DateAndtime);
-
-  // Calculate time elapsed since the last application
-  const timeElapsed = Date.now() - DateAndtime.getTime();
-  const minutesElapsed = Math.floor(timeElapsed / (60 * 1000));
-  console.log("Time Elapsed (minutes):", minutesElapsed);
-
-  // Calculate remaining time
-  const timeRemaining = (2 - minutesElapsed) * 60 * 1000;
-  console.log("Time remaining (milliseconds):", timeRemaining);
-
-  // If remaining time is negative or zero, no need to schedule anything
-  if (timeRemaining <= 0) {
-    console.log("No action required. Time has already elapsed.");
-    return;
-  }
-
-  // Schedule a job to send a notification after 2 minutes
-  const scheduleTime = new Date(Date.now() + timeRemaining);
-  console.log("Schedule time:", scheduleTime);
-
-  const job = Schedule.scheduleJob(scheduleTime, async () => {
-    data.block = false;
-    data.save();
-    console.log("data", data);
-    console.log(
-      "2 minutes elapsed. Sending notification email... You can again send Leave application"
-    );
-    await TimeApplicationEmailTemplate(
-      useremail,
-      username,
-      data.application_no,
-      timeRemaining
-    );
-    // sendNotificationEmail(data.email, "Reapplication Notification", "You can now reapply for leave.");
-  });
-
-  data.block = true;
-  // Calculate the time when the notification will be sent
-  const notificationTime = new Date(Date.now() + timeRemaining);
-  console.log("Notification will be sent at:", notificationTime);
 };
 
-// Example usage
-// TimeManagementForApplication("6644857ba91e6ab2bf7de4ff");
-
-// setTimeout(() => {
-//   console.log(new Date());
-// }, 1000);
-
-// Example usage
-// TimeManagementForApplication("user_id_here");
-
-// Example usage
-
 const ReapplyLeaveApplication = async (userid, userdata) => {
-  const { startDate, endDate, reason } = userdata;
+  try {
+    const { startDate, endDate, reason } = userdata;
+    console.log("user is id ", userid);
 
-  // Check if all required fields are provided
-  if (!startDate || !endDate || !reason) {
-    throw new ErrorHandler("All fields are required", 401);
-  }
+    // Check if all required fields are provided
+    if (!startDate || !endDate || !reason) {
+      throw new ErrorHandler("All fields are required", 401);
+    }
 
-  // Find leave data for the user
-  const data = await LeaveModel.findOne({ employeeId: userid });
-
-  if (!data) {
-    throw new ErrorHandler("No previous leave application found", 404);
-  }
-
-  // Check if user can reapply based on block status
-  if (data.block === true && data.status == "rejected") {
-    // Execute time management function
-    TimeManagementForApplication(userid);
-  } else {
+    // Check if dates are valid
     if (!isValidDates(startDate, endDate)) {
       throw new ErrorHandler(
         "End date must be at least one day after start date. Date format: DD/MM/YYYY",
@@ -374,31 +381,60 @@ const ReapplyLeaveApplication = async (userid, userdata) => {
       );
     }
 
-    // Update leave data with new details
-    data.startDate = startDate;
-    data.endDate = endDate;
-    data.reason = reason;
-    data.status = "pending"; // Assuming reapplications are pending by default
-    data.DateAndtime = Date.now();
-    data.save();
-    console.log("Your data is send  and updated suceess fully", data);
-    return data;
-  }
-  // If the leave status is rejected, allow reapplication
+    // Find leave data for the user
+    const data = await LeaveModel.findOne({ employeeId: userid });
+    console.log("reapply dataus ", data);
 
-  if (data.status === "rejected") {
-    // Check if dates are valid
-  } else {
-    throw new ErrorHandler("You cannot reapply for leave application.", 401);
+    if (!data) {
+      throw new ErrorHandler("No previous leave application found", 404);
+    }
+
+    // Check if user can reapply based on block status
+    if (data.block === true && data.status == "rejected") {
+      // Execute time management function
+      await TimeManagementForApplication(userid);
+    } else {
+      // Update leave data with new details
+      data.startDate = startDate;
+      data.endDate = endDate;
+      data.reason = reason;
+      data.status = "pending"; // Assuming reapplications are pending by default
+      data.DateAndtime = Date.now();
+
+      // Save the updated leave data
+      await data.save();
+      console.log("Your data is sent and updated successfully", data);
+      return data;
+    }
+  } catch (error) {
+    console.error("Error in ReapplyLeaveApplication:", error.message);
+    throw error; // Re-throwing the error for handling at the caller level
   }
 };
 
 // Example usage
-const userdata2 = {
-  startDate: "20/12/2024",
-  endDate: "25/12/2024",
-  reason: "Again send Leave Application",
+const userId = "user123"; // Replace with actual user ID
+const reapplyData = {
+  startDate: new Date(),
+  endDate: new Date(),
+  reason: "Vacation",
 };
+
+// try {
+//   // Reapply for leave
+//   await ReapplyLeaveApplication(userId, reapplyData);
+// } catch (error) {
+//   console.error("Error:", error.message);
+// }
+
+// // If the leave status is rejected, allow reapplication
+
+// // Example usage
+// const userdata2 = {
+//   startDate: "20/12/2024",
+//   endDate: "25/12/2024",
+//   reason: "Again send Leave Application",
+// };
 
 // Assuming user ID is provided as "user_id_here"/
 // ReapplyLeaveApplication("6644857ba91e6ab2bf7de4ff", userdata2);
@@ -414,5 +450,7 @@ module.exports = {
   updateApplicationByApplicationID,
   ApprovedLeave,
   RejectedLeave,
+  ReapplyLeaveApplication,
   // ReApplyApplication,
+  calculateDateDifference,
 };

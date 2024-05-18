@@ -58,6 +58,20 @@ const UpdateAdminAvatar = catchAsync(async (req, res) => {
   ApiResponse(res, 200, "Profile image updated successfully", user);
 });
 
+const updateAdminLeaveApplication = catchAsync(async (req, res) => {
+  const user = await AdminService.updateAdminLeaveApplication(
+    req.user._id,
+    req.body
+  );
+  ApiResponse(res, 200, "Application is updated successfully", user);
+});
+
+const ApplyLeaveApplication = catchAsync(async (req, res) => {
+  const user = await AdminService.ApplyLeaveadmin(req.user._id, req.body);
+
+  ApiResponse(res, 200, "Application Apply successfully", user);
+});
+
 module.exports = {
   UpdateUserWithID,
   FindAllUserByAdmin,
@@ -66,4 +80,6 @@ module.exports = {
   resetPassword,
   LogoutUser,
   UpdateAdminAvatar,
+  updateAdminLeaveApplication,
+  ApplyLeaveApplication,
 };

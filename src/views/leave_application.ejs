@@ -28,10 +28,21 @@
       .highlight {
         font-weight: bold;
       }
+      img {
+        width: 100px; /* Set desired width */
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        margin-bottom: 20px;
+      }
     </style>
   </head>
   <body>
     <div class="container">
+      <img
+        src="https://th.bing.com/th/id/OIP.w2mPynL35V1-hOdDwO1Z7gHaHa?rs=1&pid=ImgDetMain"
+        alt="Company Logo"
+      />
       <h1>Leave Application Confirmation</h1>
       <p>Dear <span class="highlight"><%=username%></span>,</p>
       <p>
@@ -50,7 +61,11 @@
       <p>Our team will review your application and get back to you soon.</p>
       <p>You can trace the Our Application Using Application Number</p>
       <p>Thank you for using our leave management system.</p>
-      <p>Best regards,<br />[Your Company Name]</p>
+      <p>
+        Best regards,<br /><a href="https://digivistainfotech.com/index"
+          >Digivista Infotech</a
+        >
+      </p>
     </div>
   </body>
 </html>

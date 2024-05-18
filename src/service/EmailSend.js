@@ -36,7 +36,28 @@ const SendMailLeaveAppliation = async (
       endDate,
       totalleave,
     });
-    console.log("data is showing ", data);
+    await SendMailAnywhere(mail, data, (subject = " Leave Application"));
+  } catch (error) {
+    console.log(error);
+  }
+};
+const SendHrMailLeaveAppliation = async (
+  mail,
+  username,
+  application_no,
+  startDate,
+  endDate,
+  totalLeave
+) => {
+  try {
+    const EmailTemplatePath = path.join(__dirname, "../views/admin.ejs");
+    const data = await ejs.renderFile(EmailTemplatePath, {
+      username,
+      application_no,
+      startDate,
+      endDate,
+      totalLeave,
+    });
     await SendMailAnywhere(mail, data, (subject = " Leave Application"));
   } catch (error) {
     console.log(error);
@@ -190,6 +211,7 @@ module.exports = {
   ApprovedApplicationEmailTemplate,
   RejectApplicationEmailTemplate,
   TimeApplicationEmailTemplate,
+  SendHrMailLeaveAppliation,
 };
 
 // GeneratorOtp("surajkumar@gmaml.com");

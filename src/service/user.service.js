@@ -1,4 +1,4 @@
-const { UserModel, OtpModel, TokenModel } = require("../models");
+const { UserModel, OtpModel, TokenModel, UserNameModel } = require("../models");
 const ErrorHandler = require("../utils/ErrorHandler");
 const jwt = require("jsonwebtoken");
 const { SendOnlyEmailForgate } = require("./EmailSend");
@@ -45,7 +45,18 @@ const RegisterUser = async (req, userdata) => {
   if (!avatar) {
     throw new ErrorHandler("Select the avatar/profile image", 401);
   }
-  user = await UserModel.create({ ...userdata, avatar: avatarimage.url });
+  const AlredyUsername = await UserNameModel.findOne({ username });
+  if (AlredyUsername) {
+    throw new ErrorHandler("This username is already use other user", 401);
+  } else {
+    user = await UserModel.create({ ...userdata, avatar: avatarimage.url });
+
+    await UserNameModel.create({
+      userid: user._id,
+      username: username,
+    });
+  }
+
   // console.log("useris", user);
 
   return user;
@@ -195,6 +206,23 @@ const updateUser = async (userId, userData) => {
     // }
 
     // Find and update user by userId
+    const AllUSer = await UserNameModel.find({ username: username });
+    if (!AllUSer) {
+      throw new ErrorHandler("User is not found for this username", 401);
+    }
+    console.log("This is a all user", AllUSer);
+    if (AllUSer.find((user) => user.username === username)) {
+      throw new ErrorHandler(
+        "Thise username is already use other user try other",
+        401
+      );
+    }
+    const updatedUserName = await UserNameModel.findOneAndUpdate(
+      { userid: userId },
+      { $set: { username } },
+      { new: true, upsert: true }
+    );
+    // console.log("NewUser", updatedUserName);
     user = await UserModel.findByIdAndUpdate(
       userId,
       {
@@ -212,15 +240,18 @@ const updateUser = async (userId, userData) => {
     if (!user) {
       throw new ErrorHandler("User not found", 404);
     }
-    console.log("updated user  is", user);
-    user.password = undefined;
     return user;
   } catch (error) {
     // If an error occurs, throw it for the calling function to handle
     throw error;
   }
 };
+// const somedata = {
+//   name: "updated Akashkumar",
+//   username: "Akash04",
+// };
 
+// updateUser("66482adfe6e69f140a372dc6", somedata);
 const updateAvatar = async (req, userId) => {
   try {
     const avatarLocalPath = req.file?.path;

@@ -6,6 +6,7 @@ const nodeCache = new NodeCache();
 const jwt = require("jsonwebtoken");
 const UploadfileOnCloudinary = require("../utils/cloudinary");
 const deleteFileFromCloudinary = require("../utils/DeleteUserAvatar");
+const { updateApplicationByid } = require("./leave.service");
 dotenv.config();
 
 const UserUpdateWithIdService = async (adminid, userData) => {
@@ -195,7 +196,45 @@ const UpdatedAdminAvatar = async (req, userId) => {
     throw error;
   }
 };
+const ApplyLeaveadmin = async (userid, usedate) => {
+  const { startDate, endDate, reason } = usedate;
+  const totalleave = calculateDateDifference(startDate, endDate);
+  const FindadminId = await UserModel.findById(userid);
+  console.log("user id is ", FindhrId);
+  const Findhr = await UserModel.findOne({ role: "hr" });
+  console.log("admin data is ", Findhr);
+  const hrEmail = Findhr.email;
+  if (Findhr.role !== "admin") {
+    throw new ErrorHandler(
+      "You are not authorized apply application leave Applicaiton ",
+      401
+    );
+  }
+  const apply = await ApplyLeave(userid, usedate);
+  //   console.log("admin data is ", FindAdmin);
+  SendHrMailLeaveAppliation(
+    hrEmail,
+    FindadminId.username,
+    apply.application_no,
+    apply.startDate,
+    apply.endDate,
+    totalleave
+  );
+  console.log("apply is ", apply);
+};
 
+const updateAdminLeaveApplication = async (userid, data) => {
+  let user;
+  user = await UserModel.findById(userid);
+  if (user.role !== "admin") {
+    throw new ErrorHandler(
+      "You are not authorized apply application leave Applicaiton",
+      401
+    );
+  }
+  user = await updateApplicationByid(userid, userdata);
+  return user;
+};
 module.exports = {
   UserUpdateWithIdService,
   FindAllUserExceptLoggedIn,
@@ -205,4 +244,6 @@ module.exports = {
   useridfindbytoken,
   Logoutuser,
   UpdatedAdminAvatar,
+  updateAdminLeaveApplication,
+  ApplyLeaveadmin,
 };

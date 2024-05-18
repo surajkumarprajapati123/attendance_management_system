@@ -1,6 +1,7 @@
 const { UserModel } = require("../models");
 const { TokenService } = require("../service");
 const jwt = require("jsonwebtoken");
+const ErrorHandler = require("../utils/ErrorHandler");
 
 const Auth = async (req, res, next) => {
   try {
@@ -10,7 +11,7 @@ const Auth = async (req, res, next) => {
 
     // console.log(token);
     if (!token) {
-      throw new ApiError(401, "Unauthorized request");
+      throw new ErrorHandler("Unauthorized request", 401);
     }
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
@@ -20,7 +21,7 @@ const Auth = async (req, res, next) => {
     );
 
     if (!user) {
-      throw new ApiError(401, "Invalid Access Token");
+      throw new ErrorHandler("Invalid Access Token", 401);
     }
 
     req.user = user;
