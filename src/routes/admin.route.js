@@ -15,7 +15,7 @@ router
   .put(AdminAuth, AdminController.updateAdminLeaveApplication);
 router
   .route("/search")
-  .get(AdminAuth, LeaveController.SerchByApplicationNumber);
+  .get(AdminAuth, AdminController.SerchByApplicationNumber);
 router
   .route("/avatar-update")
   .put(AdminAuth, upload.single("avatar"), AdminController.UpdateAdminAvatar);
@@ -257,7 +257,7 @@ module.exports = router;
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: applicationNumber
+ *         name: application_no
  *         required: true
  *         description: Application number of the leave application
  *         schema:
@@ -268,10 +268,11 @@ module.exports = router;
  *       404:
  *         description: Leave application not found
  *       401:
- *         description: Unauthorized, invalid or expired token
+ *         description: Unauthorized, invalid, or expired token
  *       500:
  *         description: Internal server error
  */
+
 // update Applicaiotn using id
 /**
  * @swagger

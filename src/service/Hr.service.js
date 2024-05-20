@@ -15,7 +15,7 @@ const HrUpdateWithIdService = async (hrid, userData) => {
     const hr = await UserModel.findById(hrid);
 
     // Extract email and password from userData
-    const { email, password, username, name, avatar } = userData;
+    const { email, password, username, name, avatar, role } = userData;
 
     const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!pattern.test(email)) {
@@ -27,6 +27,9 @@ const HrUpdateWithIdService = async (hrid, userData) => {
     }
     if (avatar) {
       throw new ErrorHandler("Avatar you can't  change ", 400);
+    }
+    if (role) {
+      throw new ErrorHandler("You cant't change role", 400);
     }
     const AllUSer = await UserNameModel.find({ username: username });
     if (!AllUSer) {
@@ -200,7 +203,7 @@ const Logoutuser = async (userid) => {
     }
   );
   const useridmodel = await UserModel.findById(userid);
-  console.log("user model is ",useridmodel)
+  console.log("user model is ", useridmodel);
   if (useridmodel.role !== "hr") {
     throw new ErrorHandler("Your are not authorized", 401);
   }
@@ -229,15 +232,15 @@ const ApplyLeaveHr = async (userid, usedate) => {
   }
   const apply = await ApplyLeave(userid, usedate);
   //   console.log("admin data is ", FindAdmin);
-  // await SendHrMailLeaveAppliation(
-  //   adminEmail,
-  //   FindhrId.username,
-  //   apply.application_no,
-  //   apply.startDate,
-  //   apply.endDate,
-  //   totalleave
-  // );
-  // console.log("apply is ", apply);
+  await SendHrMailLeaveAppliation(
+    adminEmail,
+    FindhrId.username,
+    apply.application_no,
+    apply.startDate,
+    apply.endDate,
+    totalleave
+  );
+  console.log("apply is ", apply);
   return apply;
 };
 
@@ -296,6 +299,7 @@ const updateLeaveApplication = async (userid, userdata) => {
     );
   }
   user = await updateApplicationByid(userid, userdata);
+
   return user;
 };
 module.exports = {

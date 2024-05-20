@@ -72,6 +72,13 @@ const ApplyLeaveApplication = catchAsync(async (req, res) => {
   ApiResponse(res, 200, "Application Apply successfully", user);
 });
 
+const SerchByApplicationNumber = catchAsync(async (req, res) => {
+  const leave = await AdminService.SearchbyApplicationNumber(
+    req.query.application_no
+  );
+  ApiResponse(res, 200, "All data  is showing for this applicaiton ", leave);
+});
+
 module.exports = {
   UpdateUserWithID,
   FindAllUserByAdmin,
@@ -82,4 +89,5 @@ module.exports = {
   UpdateAdminAvatar,
   updateAdminLeaveApplication,
   ApplyLeaveApplication,
+  SerchByApplicationNumber,
 };

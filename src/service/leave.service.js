@@ -6,6 +6,7 @@ const {
   ApprovedApplicationEmailTemplate,
   RejectApplicationEmailTemplate,
   TimeApplicationEmailTemplate,
+  SendMailUpdatedLeaveAppliation,
 } = require("./EmailSend");
 const { UserUpdateWithIdService } = require("./admin.service");
 
@@ -124,22 +125,44 @@ const updateApplicationByid = async (userid, userdata) => {
       400
     );
   }
+  const UserData = await UserModel.findById({ _id: userid });
+  const useremail = UserData.email;
+  const username = UserData.username;
   const leaveModel = await LeaveModel.findOne({ employeeId: userid });
   // console.log("leave model ", leaveModel);
   user = await LeaveModel.findOneAndUpdate({ _id: leaveModel._id }, userdata, {
     new: true,
   });
-  //   console.log("user id ", user);
+  // console.log("user id ", user);
   if (!user) {
     throw new ErrorHandler("User is not found", 400);
   }
   // console.log("Update user is ", user);
+  const totalleave = calculateDateDifference(startDate, endDate);
+  await SendMailUpdatedLeaveAppliation(
+    useremail,
+    username,
+    leaveModel.application_no,
+    leaveModel.startDate,
+    leaveModel.endDate,
+    totalleave
+  );
   return user;
 };
-const updateApplicationByApplicationID = async (userid, userdata) => {
+const updateApplicationByApplicationID = async (
+  userid,
+  userdata,
+  application_no
+) => {
   let user;
-  const { startDate, endDate, reason, application_no } = userdata;
+  // console.log("application number is ", application_no);
+  const { startDate, endDate, reason } = userdata;
   const useremp = await LeaveModel.findOne({ employeeId: userid });
+  const userdataformddb = await UserModel.findById({ _id: userid });
+  // console.log("user for leave model ", useremp);
+  // console.log("from user modle ", userdataformddb);
+  const useremail = userdataformddb.email;
+  const username = userdataformddb.username;
   if (!useremp) {
     throw new ErrorHandler("User not found", 401);
   }
@@ -156,11 +179,20 @@ const updateApplicationByApplicationID = async (userid, userdata) => {
       new: true,
     }
   );
-  //   console.log("user id ", user);
+  // console.log("user id ", user);
   if (!user) {
     throw new ErrorHandler("User is not found", 400);
   }
+  const totalleave = calculateDateDifference(startDate, endDate);
   console.log("Update user is ", user);
+  await SendMailUpdatedLeaveAppliation(
+    useremail,
+    username,
+    user.application_no,
+    user.startDate,
+    user.endDate,
+    totalleave
+  );
   return user;
 };
 
@@ -226,35 +258,40 @@ const SearchbyApplicationNumber = async (Serachdata) => {
 // })();
 
 const ApprovedLeave = async (userid) => {
-  const data = await LeaveModel.findOne({ employeeId: userid });
-  const userdata = await UserModel.findById({ _id: userid });
-  const totalleave = calculateDateDifference(data.startDate, data.endDate);
+  const userdata = await LeaveModel.findById({ _id: userid });
+  const datausermodel = await UserModel.findById({ _id: userdata.employeeId });
+  console.log("user data is ", datausermodel);
+  console.log("user detauls ", userdata);
+  const totalleave = calculateDateDifference(
+    userdata.startDate,
+    userdata.endDate
+  );
   // console.log("totalleave", totalleave, "second time ", data.endDate);
-  const useremail = userdata.email;
-  const username = userdata.username;
-  console.log("data is form approved system ", data);
+  const useremail = datausermodel.email;
+  const username = datausermodel.username;
+  console.log("data is form approved system ", userdata);
 
-  if (!data) {
+  if (!userdata) {
     throw new ErrorHandler("User is not found", 401);
   }
-  if (data.status == "rejected") {
+  if (userdata.status == "rejected") {
     throw new ErrorHandler("Your applicaiton is Already Rejected", 400);
   }
-  if (data.status == "approved") {
+  if (userdata.status == "approved") {
     throw new ErrorHandler("Your application is already Approved", 400);
   }
-  data.status = "approved";
-  data.DateAndtime = Date.now();
-  data.save();
+  userdata.status = "approved";
+  userdata.DateAndtime = Date.now();
+  userdata.save();
   await ApprovedApplicationEmailTemplate(
     useremail,
     username,
-    data.application_no,
-    data.startDate,
-    data.endDate,
+    userdata.application_no,
+    userdata.startDate,
+    userdata.endDate,
     totalleave
   );
-  return data;
+  return userdata;
 };
 const RejectedLeave = async (userid, userdata1) => {
   const { reason } = userdata1;
@@ -271,6 +308,9 @@ const RejectedLeave = async (userid, userdata1) => {
   }
 
   // Iterate over each leave document and update status and reason
+  if (leaves.status === "approved") {
+    throw new ErrorHandler("This application is Already approved ", 400);
+  }
 
   if (leaves.status === "rejected") {
     throw new ErrorHandler("Leave application is already rejected", 400);

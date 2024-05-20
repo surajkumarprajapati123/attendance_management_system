@@ -41,6 +41,28 @@ const SendMailLeaveAppliation = async (
     console.log(error);
   }
 };
+const SendMailUpdatedLeaveAppliation = async (
+  mail,
+  username,
+  application_no,
+  startDate,
+  endDate,
+  totalleave
+) => {
+  try {
+    const EmailTemplatePath = path.join(__dirname, "../views/updatedLeave.ejs");
+    const data = await ejs.renderFile(EmailTemplatePath, {
+      username,
+      application_no,
+      startDate,
+      endDate,
+      totalleave,
+    });
+    await SendMailAnywhere(mail, data, (subject = "Updated Leave Application"));
+  } catch (error) {
+    console.log(error);
+  }
+};
 const SendHrMailLeaveAppliation = async (
   mail,
   username,
@@ -212,6 +234,7 @@ module.exports = {
   RejectApplicationEmailTemplate,
   TimeApplicationEmailTemplate,
   SendHrMailLeaveAppliation,
+  SendMailUpdatedLeaveAppliation,
 };
 
 // GeneratorOtp("surajkumar@gmaml.com");
