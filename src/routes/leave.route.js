@@ -8,7 +8,7 @@ const router = express.Router();
 router.route("/create").post(Auth, LeaveController.ApplyLeave);
 router.route("/update_id").put(Auth, LeaveController.updateApplicationById);
 router
-  .route("/update_applicaiotn_no")
+  .route("/update_applicaiotn_no/:application_no")
   .put(Auth, LeaveController.UpdateApplicationByAllicaitonNumber);
 router
   .route("/pending")
@@ -111,9 +111,10 @@ module.exports = router;
  */
 
 // update applicaiotn using applicaiotn number
+
 /**
  * @swagger
- * /leave/update_applicaiotn_no/:
+ * /leave/update_applicaiotn_no/{application_no}:
  *   put:
  *     summary: Update leave application by application number
  *     tags: [Leave]

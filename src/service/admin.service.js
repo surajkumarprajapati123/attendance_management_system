@@ -1,4 +1,4 @@
-const { UserModel, TokenModel } = require("../models");
+const { UserModel, TokenModel, LeaveModel } = require("../models");
 const ErrorHandler = require("../utils/ErrorHandler");
 const NodeCache = require("node-cache");
 const dotenv = require("dotenv");
@@ -14,7 +14,7 @@ const UserUpdateWithIdService = async (adminid, userData) => {
     let user;
 
     // Extract email and password from userData
-    const { email, password, username, name, avatar } = userData;
+    const { email, password, username, name, avatar, role } = userData;
 
     const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!pattern.test(email)) {
@@ -26,6 +26,9 @@ const UserUpdateWithIdService = async (adminid, userData) => {
     }
     if (avatar) {
       throw new ErrorHandler("Avatar you can't  change ", 400);
+    }
+    if (role) {
+      throw new ErrorHandler("Role can't be changed", 401);
     }
 
     // If password is provided, hash it
@@ -64,7 +67,9 @@ const FindAllUserExceptLoggedIn = async (loggedInUserId) => {
   if (nodeCache.has("users")) {
     users = JSON.parse(nodeCache.get("users"));
   } else {
-    users = await UserModel.find({ _id: { $ne: loggedInUserId } });
+    users = await UserModel.find({ _id: { $ne: loggedInUserId } }).select(
+      "-password -_id -__v"
+    );
     nodeCache.set("users", JSON.stringify(users));
   }
   if (users.length === 0) {
@@ -82,7 +87,9 @@ const deleteuser = async (userId) => {
   return user;
 };
 const getProfile = async (userid) => {
-  const user = await UserModel.findById({ _id: userid });
+  const user = await UserModel.findById({ _id: userid }).select(
+    "-password -_id -email -__v"
+  );
   if (!user) {
     throw new ErrorHandler("User Not found", 400);
   }
@@ -235,6 +242,22 @@ const updateAdminLeaveApplication = async (userid, data) => {
   user = await updateApplicationByid(userid, userdata);
   return user;
 };
+
+const SearchbyApplicationNumber = async (Serachdata) => {
+  const user = await LeaveModel.find({
+    application_no: { $regex: Serachdata, $options: "i" },
+  }).select("-_id");
+
+  // console.log("Search user is ", user);
+  if (!user) {
+    throw new ErrorHandler(
+      `User is not found for This applicaiton ${application_no}`
+    );
+  }
+  return user;
+};
+
+// SearchbyApplicationNumber("UPD0005305");
 module.exports = {
   UserUpdateWithIdService,
   FindAllUserExceptLoggedIn,
@@ -246,4 +269,5 @@ module.exports = {
   UpdatedAdminAvatar,
   updateAdminLeaveApplication,
   ApplyLeaveadmin,
+  SearchbyApplicationNumber,
 };

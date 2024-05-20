@@ -174,7 +174,7 @@ const resetPassword = async (passwordData, token) => {
 
 const getProfile = async (userid) => {
   const user = await UserModel.findById({ _id: userid }).select(
-    "-password -_id"
+    "-password -_id -__v"
   );
   if (user.role == "admin") {
     throw new ErrorHandler("You can't senn this profile", 401);
@@ -190,7 +190,7 @@ const updateUser = async (userId, userData) => {
     let user;
 
     // Extract email and password from userData
-    const { email, password, name, username } = userData;
+    const { email, password, name, username, role } = userData;
 
     // Check if email is provided in the userData
     if (email) {
@@ -198,6 +198,10 @@ const updateUser = async (userId, userData) => {
     }
     if (password) {
       throw new ErrorHandler("Password can't be change", 401);
+    }
+
+    if (role) {
+      throw new ErrorHandler("role can't be changed", 401);
     }
     // If password is provided, hash it
     // if (password) {

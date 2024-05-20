@@ -16,8 +16,13 @@ const updateApplicationById = catchAsync(async (req, res) => {
   ApiResponse(res, 200, "Application is updated Successfully", leave);
 });
 
+// thisis
 const UpdateApplicationByAllicaitonNumber = catchAsync(async (req, res) => {
-  const leave = await LeaveService.updateApplicationByApplicationID(req.body);
+  const leave = await LeaveService.updateApplicationByApplicationID(
+    req.user._id,
+    req.body,
+    req.params.application_no
+  );
   ApiResponse(res, 200, "Application is updated Successsfully", leave);
 });
 

@@ -25,7 +25,13 @@ const Auth = async (req, res, next) => {
     }
 
     req.user = user;
+    if (user.role === "admin") {
+      res
+        .status(401)
+        .json({ message: " Unauthorized,Admin can't access this" });
+    }
     // console.log("user form middleware", req.user);
+    // console.log("middleare is controller is ", user);
     next();
   } catch (error) {
     // Step 5: Handle authentication error
