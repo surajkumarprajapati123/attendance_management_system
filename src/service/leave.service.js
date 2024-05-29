@@ -1,5 +1,6 @@
 const { LeaveModel, UserModel } = require("../models");
 const ErrorHandler = require("../utils/ErrorHandler");
+const moment = require("moment");
 const Schedule = require("node-schedule");
 const {
   SendMailLeaveAppliation,
@@ -20,27 +21,97 @@ const generateRandomString = (length) => {
   }
   return result;
 };
-function calculateDateDifference(startDate, endDate) {
-  const startDateParts = startDate.split("/");
-  const endDateParts = endDate.split("/");
+// function calculateDateDifference(startDate, endDate) {
+//   const startDateParts = startDate.split("/");
+//   const endDateParts = endDate.split("/");
 
-  const start = new Date(
-    startDateParts[2],
-    startDateParts[1] - 1,
-    startDateParts[0]
-  );
-  const end = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0]);
+//   const start = new Date(
+//     startDateParts[2],
+//     startDateParts[1] - 1,
+//     startDateParts[0]
+//   );
+//   const end = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0]);
 
-  const difference = end.getTime() - start.getTime();
+//   const difference = end.getTime() - start.getTime();
 
-  const daysDifference = Math.floor(difference / (1000 * 60 * 60 * 24));
-  const monthsDifference = Math.floor(daysDifference / 30);
+//   const daysDifference = Math.floor(difference / (1000 * 60 * 60 * 24));
+//   const monthsDifference = Math.floor(daysDifference / 30);
 
-  const remainingDays = daysDifference % 30;
+//   const remainingDays = daysDifference % 30;
 
-  return `${remainingDays} days ${monthsDifference} months`;
-}
+//   return `${remainingDays} days ${monthsDifference} months`;
+// }
 
+createLeave = async (userId, userdata) => {
+  try {
+    const {
+      applyDate,
+      dayRange,
+      leaveType,
+      reason,
+      isVacation,
+      address,
+      document,
+    } = userdata;
+
+    const formattedApplyDate = moment(applyDate, "DD/MM/YYYY").toDate();
+    console.log("Apply Date: ", formattedApplyDate.toLocaleString());
+
+    const formattedDayRange = dayRange.map((date) =>
+      moment(date, "DD/MM/YYYY").toDate()
+    );
+
+    // const formatedata = moment(formattedDayRange).format("DD/MM/YYYY");
+    // console.log("formate data is ", formatedata);
+    const validLeaveDays = formattedDayRange.filter((date) => {
+      const dayOfWeek = moment(date, "DD/MM/YYYY").day();
+      return dayOfWeek !== 0 && dayOfWeek !== 6; // Exclude Sundays (0) and Saturdays (6)
+    });
+
+    const leaveDuration = validLeaveDays.length;
+    console.log("Leave Duration: ", leaveDuration);
+
+    const newLeave = await LeaveModel.create({
+      userid: userId,
+      applyDate: formattedApplyDate,
+      dayRange: formattedDayRange,
+      leaveType,
+      noOfDays: leaveDuration,
+      reason,
+      isVacation,
+      address,
+      document,
+    });
+
+    console.log("New Leave Entry: ", newLeave);
+    // return newLeave; // You can return the newLeave object if needed
+  } catch (err) {
+    console.log("Error: ", err);
+  }
+};
+
+const usersomedata = {
+  userid: "user123",
+  applyDate: "21/05/2024",
+  dayRange: [
+    "21/05/2024",
+    "22/05/2024",
+    "23/05/2024",
+    "24/05/2024",
+    "25/05/2024",
+    "26/05/2024",
+    "27/05/2024",
+  ],
+  leaveType: "Paid",
+  reason: "Family vacation",
+  isVacation: true,
+  address: "123 Vacation St, Beach City",
+  document: "leave_request.pdf",
+};
+
+// console.log(usersomedata);
+
+// createLeave("6644857ba91e6ab2bf7de4ff", usersomedata);
 const isValidDates = (startDate, endDate) => {
   const [sDay, sMonth, sYear] = startDate.split("/");
   const [eDay, eMonth, eYear] = endDate.split("/");
@@ -48,67 +119,67 @@ const isValidDates = (startDate, endDate) => {
   const end = new Date(`${eYear}-${eMonth}-${eDay}`);
   return end > start;
 };
-const ApplyLeave = async (userid, usedata) => {
-  const { startDate, endDate, reason } = usedata;
-  const NewUser = await UserModel.findById(userid);
-  const UserModelId = await LeaveModel.findOne({ employeeId: userid });
-  console.log("find user is ", NewUser);
+// const ApplyLeave = async (userid, usedata) => {
+//   const { startDate, endDate, reason } = usedata;
+//   const NewUser = await UserModel.findById(userid);
+//   const UserModelId = await LeaveModel.findOne({ employeeId: userid });
+//   console.log("find user is ", NewUser);
 
-  if (UserModelId) {
-    throw new ErrorHandler(
-      "You are already for apply leave application,wait for action",
-      401
-    );
-  }
+//   if (UserModelId) {
+//     throw new ErrorHandler(
+//       "You are already for apply leave application,wait for action",
+//       401
+//     );
+//   }
 
-  if (!NewUser) {
-    throw new ErrorHandler("User is not found", 401);
-  }
-  const GenerateApplicationNumber = generateRandomString(5);
-  const Application_Number =
-    NewUser.name.toUpperCase().trim().split(" ")[0].slice(0, 3) +
-    "00" +
-    GenerateApplicationNumber;
-  const totalleave = calculateDateDifference(startDate, endDate);
-  if (!startDate || !endDate || !reason) {
-    let errorMessage = "Missing fields: ";
-    if (!startDate) errorMessage += "startDate, ";
-    if (!endDate) errorMessage += "endDate, ";
-    if (!reason) errorMessage += "reason";
-    errorMessage = errorMessage.replace(/,\s*$/, ""); // Remove trailing comma and whitespace
-    console.log(errorMessage);
-    throw new ErrorHandler(errorMessage, 400);
-  }
-  if (!isValidDates(startDate, endDate)) {
-    throw new ErrorHandler(
-      "End date must be at least one day after start date.data formate DD/MM/YYYY",
-      400
-    );
-  }
+//   if (!NewUser) {
+//     throw new ErrorHandler("User is not found", 401);
+//   }
+//   const GenerateApplicationNumber = generateRandomString(5);
+//   const Application_Number =
+//     NewUser.name.toUpperCase().trim().split(" ")[0].slice(0, 3) +
+//     "00" +
+//     GenerateApplicationNumber;
+//   const totalleave = calculateDateDifference(startDate, endDate);
+//   if (!startDate || !endDate || !reason) {
+//     let errorMessage = "Missing fields: ";
+//     if (!startDate) errorMessage += "startDate, ";
+//     if (!endDate) errorMessage += "endDate, ";
+//     if (!reason) errorMessage += "reason";
+//     errorMessage = errorMessage.replace(/,\s*$/, ""); // Remove trailing comma and whitespace
+//     console.log(errorMessage);
+//     throw new ErrorHandler(errorMessage, 400);
+//   }
+//   if (!isValidDates(startDate, endDate)) {
+//     throw new ErrorHandler(
+//       "End date must be at least one day after start date.data formate DD/MM/YYYY",
+//       400
+//     );
+//   }
 
-  const user = await LeaveModel.create({
-    employeeId: userid,
-    startDate,
-    endDate,
-    reason,
-    application_no: Application_Number,
-  });
-  // user._id = undefined;
-  // user.password = undefined;
-  if (!user) {
-    throw new ErrorHandler("User is not creating", 400);
-  }
-  await SendMailLeaveAppliation(
-    NewUser.email,
-    NewUser.username,
-    Application_Number,
-    startDate,
-    endDate,
-    totalleave
-  );
-  // console.log("new leave application user is ", user);
-  return user;
-};
+//   const user = await LeaveModel.create({
+//     employeeId: userid,
+//     startDate,
+//     endDate,
+//     reason,
+//     application_no: Application_Number,
+//   });
+//   // user._id = undefined;
+//   // user.password = undefined;
+//   if (!user) {
+//     throw new ErrorHandler("User is not creating", 400);
+//   }
+//   await SendMailLeaveAppliation(
+//     NewUser.email,
+//     NewUser.username,
+//     Application_Number,
+//     startDate,
+//     endDate,
+//     totalleave
+//   );
+//   // console.log("new leave application user is ", user);
+//   return user;
+// };
 const userdata = {
   startDate: "24/02/2024",
   endDate: "28/02/2024",
@@ -481,7 +552,7 @@ const reapplyData = {
 // ApprovedLeave("6644857ba91e6ab2bf7de4ff");
 
 module.exports = {
-  ApplyLeave,
+  // ApplyLeave,
   updateApplicationByid,
   getPendingAllApplicationList,
   getrejectedAllApplicationList,
@@ -492,5 +563,5 @@ module.exports = {
   RejectedLeave,
   ReapplyLeaveApplication,
   // ReApplyApplication,
-  calculateDateDifference,
+  // calculateDateDifference,
 };

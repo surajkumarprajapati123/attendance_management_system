@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
+const moment = require("moment");
 
-const AttendaceSchemca = mongoose.Schema(
+const AttendanceSchema = mongoose.Schema(
   {
     userid: {
       type: mongoose.Schema.Types.ObjectId,
@@ -8,19 +9,28 @@ const AttendaceSchemca = mongoose.Schema(
     },
     Intime: {
       type: Date,
-      default: Date.now(),
+      default: Date.now,
+      // get: (val) => moment(val).format("DD/MM/YYYY"),
     },
     Outtime: {
       type: Date,
-      default: Date.now(),
     },
     location: {
       type: String,
       default: "Noida",
     },
+    status: {
+      type: String,
+      enum: ["absent", "present"],
+      default: "absent",
+    },
+    istime: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestaps: true }
+  { timestamps: true }
 );
 
-const attendance = mongoose.model("attendance", AttendaceSchemca);
-module.exports = attendance;
+const Attendance = mongoose.model("attendance", AttendanceSchema);
+module.exports = Attendance;
