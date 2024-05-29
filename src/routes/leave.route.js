@@ -24,6 +24,8 @@ router.route("/reject/:id").put(AdminAuth, LeaveController.RejectAppliction);
 router.route("/approve/:id").put(AdminAuth, LeaveController.ApprovedAppliction);
 router.route("/re-apply").put(Auth, LeaveController.ReApplicationApply);
 
+router.route("/holidays").get(LeaveController.Holidyas);
+
 module.exports = router;
 
 // Leave Applicaiton Apply
@@ -339,5 +341,52 @@ module.exports = router;
  *       404:
  *         description: Leave application not found
  *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /leave/holidays:
+ *   get:
+ *     summary: Get holiday data
+ *     description: Retrieve holiday data for a specific year and optional month
+ *     tags: [Holidays]
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *           format: int32
+ *         required: true
+ *         description: The year for which holiday data is requested
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: integer
+ *           format: int32
+ *         required: false
+ *         description: The month for which holiday data is requested (optional)
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   Holidays_Name:
+ *                     type: string
+ *                     description: The name of the holiday
+ *                   Holidays_Date:
+ *                     type: string
+ *                     format: date-time
+ *                     description: The date of the holiday
+ *       '400':
+ *         description: Invalid request parameters
+ *       '404':
+ *         description: No holiday data found
+ *       '500':
  *         description: Internal server error
  */

@@ -2,30 +2,62 @@ const { AttendanceModel, UserModel } = require("../models");
 const ErrorHandler = require("../utils/ErrorHandler");
 const schedule = require("node-schedule");
 const moment = require("moment");
+const mongoose = require("mongoose");
+const takingLocation = async () => {
+  try {
+    const response = await fetch(
+      `https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.GEO_API}`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch location data");
+    }
+    let obj = {};
+    const data = await response.json();
 
-const TakeAttendance = async (userid, userdate) => {
-  const { Intime, Outtime, location, status } = userdate;
-  const formattedIntime = Intime
-    ? moment(Intime, "DD/MM/YYYY").toDate()
-    : new Date();
-  const formattedOuttime = moment(Outtime, "DD/MM/YYYY").toDate();
+    console.log("Location is ", data);
+    obj = {
+      Country_Name: data.country_name,
+      State: data.state_prov,
+      city: data.city,
+      zip_code: data.zipcode,
+    };
+    const newObject = Object.values(obj).join(",");
+    // console.log("object data is ", newObject);
+    return newObject;
+  } catch (error) {
+    console.error(error);
+  }
+};
 
+const TakeAttendance = async (userid) => {
+  const user = await AttendanceModel.findOne({ userid: userid });
+  if (user) {
+    throw new ErrorHandler("Alredy taking attendance", 401);
+  }
+  const newObject = await takingLocation();
+
+  console.log("locatio form taking attendance", newObject);
   const attendance = await AttendanceModel.create({
     userid,
-    Intime,
-    location,
-    status,
+    // Intime,
+    location: newObject,
+    status: "present",
+    istime: true,
   });
   console.log("Create Attendance data is ", attendance);
   return attendance;
 };
 
+// const job = schedule.scheduleJob("*/5 * * * * *", function () {
+
+//   console.log("The answer to life, the universe, and everything!");
+// });
 const rawdata = {
   location: "Noida",
   status: "present",
 };
 
-// TakeAttendance("66497dca7ee0abf5d8160dd1", rawdata);
+// TakeAttendance("66482adfe6e69f140a372dc6");
 
 const FindAttendaceByMonth = async (userId) => {
   const attendance = await AttendanceModel.findOne({ userid: userId });
@@ -203,24 +235,32 @@ const OutTimeAttendance = async (userid) => {
     console.log("You are lout in the office ");
     attendance.status = "present";
     attendance.Outtime = undefined;
+
     attendance.save();
     console.log("attendate data is with in a time  ", attendance);
+    return attendance;
   } else {
     attendance.status = "absent";
     attendance.Outtime = new Date();
     attendance.save();
     console.log("update data is out side time ", attendance);
+    return attendance;
   }
 };
 
-// OutTimeAttendance("66497dca7ee0abf5d8160dd1");
+// OutTimeAttendance("66482adfe6e69f140a372dc6");
 
 const FindOutTimeAttendaceByMonth = async (userid) => {
-  // const attendance = await AttendanceModel.findOne({ userid: userid });
-  // if (!attendance) {
-  //   throw new ErrorHandler("User is not found", 401);
-  // }
+  if (!mongoose.Types.ObjectId.isValid(userid)) {
+    throw new Error("Invalid userid");
+  }
+  const matchStage = {
+    $match: {
+      _id: new mongoose.Types.ObjectId(userid), // Correct usage of ObjectId constructor
+    },
+  };
   const attendanceByMonth = await UserModel.aggregate([
+    matchStage,
     {
       $lookup: {
         from: "attendances",
@@ -321,17 +361,17 @@ const FindOutTimeAttendaceByMonth = async (userid) => {
     // });
   });
 
-  console.log("Attendance by month:", attendanceObj);
+  // console.log("Attendance by month:", attendanceObj);
   return attendanceObj;
 };
 
 // FindOutTimeAttendaceByMonth();
 
-const FindOutTimeAttendaceByMonthName = async (userid, monthName) => {
-  const attendance = await AttendanceModel.findOne({ userid: userid });
-  if (!attendance) {
-    throw new ErrorHandler("User is not found", 401);
-  }
+const FindOutTimeAttendaceByMonthName = async (monthName) => {
+  // const attendance = await AttendanceModel.findOne({ userid: userid });
+  // if (!attendance) {
+  //   throw new ErrorHandler("User is not found", 401);
+  // }
   // Define mapping for month names
   // if (typeof monthName === "string") {
   monthName = monthName.toLowerCase();
@@ -431,28 +471,13 @@ const FindOutTimeAttendaceByMonthName = async (userid, monthName) => {
     },
   ]);
 
-  console.log("Attendance by month:", attendanceByMonth);
+  // console.log("Attendance by month:", attendanceByMonth);
   return attendanceByMonth;
 };
 
 // FindOutTimeAttendaceByMonthName("may");
 
 // console.log("process.env.GEO_API", process.env.GEO_API);
-
-// const takingLocation = async () => {
-//   try {
-//     const response = await fetch(
-//       `https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.GEO_API}`
-//     );
-//     if (!response.ok) {
-//       throw new Error("Failed to fetch location data");
-//     }
-//     const data = await response.json();
-//     console.log(data);
-//   } catch (error) {
-//     console.error(error);
-//   }
-// };
 
 // takingLocation();
 
@@ -516,8 +541,8 @@ const findAdminAttendanceByMonthName = async (userId, monthNameOrYear) => {
 
   const totalPresentUsers = attendanceByMonthName.length;
 
-  console.log("Total present users:", totalPresentUsers);
-  console.log("Attendance data:", attendanceByMonthName);
+  // console.log("Total present users:", totalPresentUsers);
+  // console.log("Attendance data:", attendanceByMonthName);
 
   return { totalPresentUsers, attendance: attendanceByMonthName };
 };

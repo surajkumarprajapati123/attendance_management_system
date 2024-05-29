@@ -4,7 +4,7 @@ const Auth = require("../middleware/auth");
 
 const router = express.Router();
 
-router.route("/create").post(Auth, AttendanceController.TakingAttendance);
+router.route("/take").get(Auth, AttendanceController.TakingAttendance);
 router.route("/month").get(Auth, AttendanceController.FindAttendaceByMonth);
 router
   .route("/month/:monthName")
@@ -21,41 +21,23 @@ module.exports = router;
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     Attendance:
- *       type: object
- *       properties:
- *         location:
- *           type: string
- *           description: The location where the attendance is being taken
- *         time:
- *           type: string
- *           format: date-time
- *           description: The time when the attendance was taken
- */
-
-/**
- * @swagger
- * /attendance/create:
- *   post:
- *     summary: Take attendance
+ * /attendance/take:
+ *   get:
+ *     summary: Get attendance
  *     tags: [Attendance]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Attendance'
  *     responses:
- *       "201":
- *         description: Attendance taken successfully
+ *       "200":
+ *         description: Successful operation
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Attendance'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: A message indicating the success of the operation
  *       "401":
  *         description: Unauthorized Error
  *       "500":

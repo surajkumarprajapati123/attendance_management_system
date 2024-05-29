@@ -62,6 +62,11 @@ const ReApplicationApply = catchAsync(async (req, res) => {
   ApiResponse(res, 200, "Again Application Apply Successfully", data);
 });
 
+const Holidyas = catchAsync(async (req, res) => {
+  const data = await LeaveService.HolidaysDays(req.query.year, req.query.month);
+  ApiResponse(res, 200, "All Data Fetched Successfully", data);
+});
+
 module.exports = {
   ApplyLeave,
   updateApplicationById,
@@ -73,4 +78,5 @@ module.exports = {
   RejectAppliction,
   ApprovedAppliction,
   ReApplicationApply,
+  Holidyas,
 };
