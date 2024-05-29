@@ -11,6 +11,52 @@ const {
 } = require("./EmailSend");
 const { UserUpdateWithIdService } = require("./admin.service");
 
+// Import node-fetch library
+
+const HolidaysDays = async (HOLIDAYS_YEAR, HOLIDAYS_MONTH) => {
+  try {
+    const HOLIDAYS_COUNTRY = "IN"; // Provide the country code here
+
+    const url = `https://calendarific.com/api/v2/holidays?api_key=${process.env.HOLIDAYS_API_KEY}&country=${HOLIDAYS_COUNTRY}&year=${HOLIDAYS_YEAR}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+    let holidaysData = [];
+
+    if (data.response && data.response.holidays) {
+      const holidays = data.response.holidays;
+      holidays.forEach((holiday) => {
+        const obj = {
+          Holidays_Name: holiday.name,
+          Holidays_Date: holiday.date.iso,
+        };
+        holidaysData.push(obj);
+      });
+
+      if (HOLIDAYS_MONTH) {
+        // Filter holidays by month
+        holidaysData = holidaysData.filter((holiday) => {
+          const holidayDate = new Date(holiday.Holidays_Date);
+          return holidayDate.getMonth() === HOLIDAYS_MONTH - 1; // Months are zero-indexed
+        });
+      }
+
+      console.log("Holidays data:", holidaysData);
+      return holidaysData;
+    } else {
+      console.log("No holidays found.");
+      return [];
+    }
+  } catch (error) {
+    console.log("Error:", error.message);
+    throw error;
+  }
+};
+
+// Example usage:
+// HolidaysDays("2024"); // Get holidays for the year 2024
+// HolidaysDays("2024", 5); // Get holidays for May 2024
+
 // Function to generate a random string of specified length
 const generateRandomString = (length) => {
   let result = "";
@@ -42,35 +88,48 @@ const generateRandomString = (length) => {
 //   return `${remainingDays} days ${monthsDifference} months`;
 // }
 
-createLeave = async (userId, userdata) => {
+const createLeave = async (userId, userdata) => {
   try {
-    const {
-      applyDate,
-      dayRange,
-      leaveType,
-      reason,
-      isVacation,
-      address,
-      document,
-    } = userdata;
+    const { dayRange, leaveType, reason, isVacation, address, document } =
+      userdata;
+    if (!reason) {
+      throw new ErrorHandler("Reason is a required field", 401);
+    }
+    const applyDate = Date.now(); // Using current timestamp as applyDate
 
-    const formattedApplyDate = moment(applyDate, "DD/MM/YYYY").toDate();
+    const formattedApplyDate = moment(applyDate).toDate();
     console.log("Apply Date: ", formattedApplyDate.toLocaleString());
 
     const formattedDayRange = dayRange.map((date) =>
       moment(date, "DD/MM/YYYY").toDate()
     );
 
-    // const formatedata = moment(formattedDayRange).format("DD/MM/YYYY");
-    // console.log("formate data is ", formatedata);
-    const validLeaveDays = formattedDayRange.filter((date) => {
-      const dayOfWeek = moment(date, "DD/MM/YYYY").day();
-      return dayOfWeek !== 0 && dayOfWeek !== 6; // Exclude Sundays (0) and Saturdays (6)
+    // Retrieve holidays for the month and year of the given date range
+    const holidays = await HolidaysDays(
+      moment(dayRange[0], "DD/MM/YYYY").year(),
+      moment(dayRange[0], "DD/MM/YYYY").month() + 1 // Moment.js month is 0-indexed
+    );
+
+    // Filter out Saturdays and Sundays and exclude holidays
+    const filteredDates = formattedDayRange.filter((date) => {
+      const dayOfWeek = moment(date).day();
+      return (
+        dayOfWeek !== 0 && // Exclude Sundays
+        dayOfWeek !== 6 && // Exclude Saturdays
+        !holidays.some(
+          (holiday) =>
+            moment(date).isBetween(holiday.start, holiday.end, null, "[]") // Include start and end dates
+        )
+      );
     });
 
-    const leaveDuration = validLeaveDays.length;
+    // Adjust leave duration based on non-holiday and non-weekend days
+    const leaveDuration = filteredDates.length;
     console.log("Leave Duration: ", leaveDuration);
 
+    // Other logic remains the same...
+
+    // Create new leave entry
     const newLeave = await LeaveModel.create({
       userid: userId,
       applyDate: formattedApplyDate,
@@ -86,13 +145,11 @@ createLeave = async (userId, userdata) => {
     console.log("New Leave Entry: ", newLeave);
     // return newLeave; // You can return the newLeave object if needed
   } catch (err) {
-    console.log("Error: ", err);
+    console.log("Error: ", err.message);
   }
 };
 
 const usersomedata = {
-  userid: "user123",
-  applyDate: "21/05/2024",
   dayRange: [
     "21/05/2024",
     "22/05/2024",
@@ -100,7 +157,7 @@ const usersomedata = {
     "24/05/2024",
     "25/05/2024",
     "26/05/2024",
-    "27/05/2024",
+    "17/06/2024",
   ],
   leaveType: "Paid",
   reason: "Family vacation",
@@ -111,7 +168,7 @@ const usersomedata = {
 
 // console.log(usersomedata);
 
-// createLeave("6644857ba91e6ab2bf7de4ff", usersomedata);
+createLeave("66497dca7ee0abf5d8160dd1", usersomedata);
 const isValidDates = (startDate, endDate) => {
   const [sDay, sMonth, sYear] = startDate.split("/");
   const [eDay, eMonth, eYear] = endDate.split("/");
@@ -562,6 +619,7 @@ module.exports = {
   ApprovedLeave,
   RejectedLeave,
   ReapplyLeaveApplication,
+  HolidaysDays,
   // ReApplyApplication,
   // calculateDateDifference,
 };

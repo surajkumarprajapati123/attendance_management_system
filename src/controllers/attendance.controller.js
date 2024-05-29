@@ -2,10 +2,7 @@ const { AttendanceService } = require("../service");
 const ApiResponse = require("../utils/ApiResponse");
 const catchAsync = require("../utils/CatchAsync");
 const TakingAttendance = catchAsync(async (req, res) => {
-  const attendance = await AttendanceService.TakeAttendance(
-    req.user._id,
-    req.body
-  );
+  const attendance = await AttendanceService.TakeAttendance(req.user._id);
   ApiResponse(res, 201, "Attendance Taking successfully", attendance);
 });
 
@@ -29,7 +26,11 @@ const OutTimeAttendance = catchAsync(async (req, res) => {
 });
 
 const FindOutOfAllAttendanceByMonth = catchAsync(async (req, res) => {
-  const attendance = await AttendanceService.FindOutTimeAttendaceByMonth();
+  console.log("user id is", req.user._id);
+  const attendance = await AttendanceService.FindOutTimeAttendaceByMonth(
+    req.user._id
+  );
+  console.log("attendacen is ", attendance);
   ApiResponse(res, 200, "Date Fetched successfully", attendance);
 });
 
