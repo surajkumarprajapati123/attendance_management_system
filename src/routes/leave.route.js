@@ -25,6 +25,8 @@ router.route("/approve/:id").put(AdminAuth, LeaveController.ApprovedAppliction);
 router.route("/re-apply").put(Auth, LeaveController.ReApplicationApply);
 
 router.route("/holidays").get(LeaveController.Holidyas);
+router.route("/types").get(LeaveController.findLeaveDays);
+router.route("/type").get(Auth, LeaveController.findLeaveWithId);
 
 module.exports = router;
 
@@ -54,19 +56,24 @@ module.exports = router;
  *               startDate:
  *                 type: string
  *                 format: date
- *                 description: Start date of the leave (DD/MM/YYYY)
+ *                 description: Start date of the leave (yyyy-mm-dd)
  *               endDate:
  *                 type: string
  *                 format: date
- *                 description: End date of the leave (DD/MM/YYYY)
+ *                 description: End date of the leave (yyyy-mm-dd)
  *               reason:
  *                 type: string
  *                 description: Reason for the leave
  *                 example: "Family vacation"
+ *               leaveType:
+ *                 type: string
+ *                 description: Type of leave
+ *                 example: "casualLeave"
  *             required:
  *               - startDate
  *               - endDate
  *               - reason
+ *               - leaveType
  *     responses:
  *       200:
  *         description: Leave application submitted successfully
@@ -81,10 +88,11 @@ module.exports = router;
  * @swagger
  * /leave/update_id:
  *   put:
- *     summary: Update leave application by ID
+ *     summary: Update a leave application by application number
  *     tags: [Leave]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
  *     requestBody:
  *       required: true
  *       content:
@@ -92,22 +100,29 @@ module.exports = router;
  *           schema:
  *             type: object
  *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: New reason for the leave
+ *                 example: "Personal reason"
  *               startDate:
  *                 type: string
  *                 format: date
- *                 description: Start date of the leave
+ *                 description: New start date of the leave (yyyy-mm-dd)
  *               endDate:
  *                 type: string
  *                 format: date
- *                 description: End date of the leave
- *               reason:
+ *                 description: New end date of the leave (yyyy-mm-dd)
+ *               leaveType:
  *                 type: string
- *                 description: Reason for the leave
+ *                 description: New type of leave
+ *                 example: "casualLeave"
  *     responses:
  *       200:
- *         description: Leave application updated successfully
+ *         description: Leave request updated successfully
+ *       400:
+ *         description: Invalid input or insufficient leave balance
  *       401:
- *         description: Unauthorized, invalid, or expired token
+ *         description: Unauthorized or user not found
  *       500:
  *         description: Internal server error
  */
@@ -116,19 +131,26 @@ module.exports = router;
 
 /**
  * @swagger
+ * tags:
+ *   name: Leave
+ *   description: API endpoints for managing leave applications
+ */
+
+/**
+ * @swagger
  * /leave/update_applicaiotn_no/{application_no}:
  *   put:
- *     summary: Update leave application by application number
+ *     summary: Update a leave application by application number
  *     tags: [Leave]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
+ *       - in: query
  *         name: application_no
- *         required: true
- *         description: Application number of the leave application to update
  *         schema:
  *           type: string
+ *         required: true
+ *         description: Application number of the leave request
  *     requestBody:
  *       required: true
  *       content:
@@ -136,22 +158,39 @@ module.exports = router;
  *           schema:
  *             type: object
  *             properties:
+ *               status:
+ *                 type: string
+ *                 description: New status of the leave application
+ *                 example: "approved"
+ *               reason:
+ *                 type: string
+ *                 description: New reason for the leave
+ *                 example: "Personal reason"
  *               startDate:
  *                 type: string
  *                 format: date
- *                 description: Start date of the leave
+ *                 description: New start date of the leave (yyyy-mm-dd)
+ *                 example: "2024-06-17"
  *               endDate:
  *                 type: string
  *                 format: date
- *                 description: End date of the leave
- *               reason:
+ *                 description: New end date of the leave (yyyy-mm-dd)
+ *                 example: "2024-06-20"
+ *               leaveType:
  *                 type: string
- *                 description: Reason for the leave
+ *                 description: New type of leave
+ *                 example: "casualLeave"
+ *             required:
+ *               - startDate
+ *               - endDate
+ *               - leaveType
  *     responses:
  *       200:
- *         description: Leave application updated successfully
+ *         description: Leave request updated successfully
+ *       400:
+ *         description: Invalid input or insufficient leave balance
  *       401:
- *         description: Unauthorized, invalid, or expired token
+ *         description: Unauthorized or user not found
  *       500:
  *         description: Internal server error
  */
@@ -388,5 +427,75 @@ module.exports = router;
  *       '404':
  *         description: No holiday data found
  *       '500':
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /leave/type:
+ *   get:
+ *     summary: Get all leave types
+ *     tags: [Leave]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Data fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Data fetched successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       leaveType:
+ *                         type: string
+ *                         example: sickLeave
+ *                       days:
+ *                         type: integer
+ *                         example: 10
+ *       401:
+ *         description: Unauthorized, invalid, or expired token
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /leave/types:
+ *   get:
+ *     summary: Get all leave types
+ *     tags: [Leave]
+ *     responses:
+ *       200:
+ *         description: Returns all available leave types and their respective allowed days.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Data fetched successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       leaveType:
+ *                         type: string
+ *                         description: The type of leave.
+ *                         example: sickLeave
+ *                       days:
+ *                         type: integer
+ *                         description: The number of days allowed for this leave type.
+ *                         example: 10
+ *       500:
  *         description: Internal server error
  */

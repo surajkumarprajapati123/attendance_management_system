@@ -67,6 +67,16 @@ const Holidyas = catchAsync(async (req, res) => {
   ApiResponse(res, 200, "All Data Fetched Successfully", data);
 });
 
+const findLeaveDays = catchAsync(async (req, res) => {
+  const data = await LeaveService.LeaveType();
+  ApiResponse(res, 200, "Date Fetched successfully", data);
+});
+
+const findLeaveWithId = catchAsync(async (req, res) => {
+  const data = await LeaveService.findLeaveTypeusingId(req.user._id);
+  ApiResponse(res, 200, "Date Fetched successfully", data);
+});
+
 module.exports = {
   ApplyLeave,
   updateApplicationById,
@@ -79,4 +89,6 @@ module.exports = {
   ApprovedAppliction,
   ReApplicationApply,
   Holidyas,
+  findLeaveDays,
+  findLeaveWithId,
 };

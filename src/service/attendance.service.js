@@ -28,7 +28,31 @@ const takingLocation = async () => {
     console.error(error);
   }
 };
+// takingLocation();
 
+// ipinfo location
+
+const takinglocaitoipingo = async () => {
+  try {
+    const response = await fetch(
+      `https://ipinfo.io/json?token=${process.env.IP_INFO_API}`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch location data");
+    }
+    const data = await response.json();
+    console.log("location data is ", data);
+    const { loc } = data;
+    const [latitude, longitude] = loc.split(",").map(parseFloat);
+    // res.json({ latitude, longitude });
+    console.log({ latitude, longitude });
+  } catch (error) {
+    console.error(error);
+    // res.status(500).json({ error: 'Failed to fetch location data' });
+  }
+};
+
+// takinglocaitoipingo();
 const TakeAttendance = async (userid) => {
   const user = await AttendanceModel.findOne({ userid: userid });
   if (user) {
@@ -270,24 +294,21 @@ const FindOutTimeAttendaceByMonth = async (userid) => {
       },
     },
     {
+      $unwind: "$attendance", // Unwind the attendance array to access individual attendance records
+    },
+    {
+      $match: {
+        "attendance.status": "absent", // Filter only the attendance records where the status is "absent"
+      },
+    },
+    {
       $project: {
         _id: 0,
-        year: { $year: "$createdAt" },
-        month: { $month: "$createdAt" },
-        monthName: { $month: "$createdAt" },
-        date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-        status: {
-          $cond: {
-            if: { $eq: [{ $size: "$attendance" }, 0] }, // Check if user has no attendance record
-            then: "absent", // User is absent if no attendance record
-            else: {
-              $cond: [
-                { $eq: ["$attendance.status", "absent"] }, // Check if user's attendance status is absent
-                "absent", // User is absent if attendance status is absent
-                "present", // User is present if attendance status is not absent
-              ],
-            },
-          },
+        year: { $year: "$attendance.createdAt" },
+        month: { $month: "$attendance.createdAt" },
+        monthName: { $month: "$attendance.createdAt" },
+        date: {
+          $dateToString: { format: "%Y-%m-%d", date: "$attendance.createdAt" },
         },
         name: 1,
         email: 1, // Include user's name
@@ -344,42 +365,16 @@ const FindOutTimeAttendaceByMonth = async (userid) => {
       UserNames: names.filter((name) => name),
       UserEmail: email.filter((email) => email), // Filter out null or undefined names
     };
-
-    // Update attendance status of users who are not present
-    // names.forEach(async (name) => {
-    //   const user = await UserModel.findOne({ name });
-    //   if (!user) return; // Skip if user not found
-    //   const attendance = await AttendanceModel.findOne({ userid: user._id });
-    //   if (!attendance) {
-    //     // Create attendance record for absent users
-    //     await AttendanceModel.create({
-    //       userid: user._id,
-    //       Intime: new Date(), // Set current date and time as Intime
-    //       status: "absent",
-    //     });
-    //   }
-    // });
   });
 
-  // console.log("Attendance by month:", attendanceObj);
   return attendanceObj;
 };
 
 // FindOutTimeAttendaceByMonth();
 
 const FindOutTimeAttendaceByMonthName = async (monthName) => {
-  // const attendance = await AttendanceModel.findOne({ userid: userid });
-  // if (!attendance) {
-  //   throw new ErrorHandler("User is not found", 401);
-  // }
-  // Define mapping for month names
-  // if (typeof monthName === "string") {
   monthName = monthName.toLowerCase();
-  // } else {
-  //   console.error("monthName is not a string");
-  // }
 
-  // Define mapping for month names
   const monthNames = {
     1: "january",
     2: "february",
@@ -395,12 +390,10 @@ const FindOutTimeAttendaceByMonthName = async (monthName) => {
     12: "december",
   };
 
-  // Get the month number from the month name
   const monthNumber = Object.keys(monthNames).find(
     (key) => monthNames[key] === monthName
   );
 
-  // If the provided month name is invalid, return empty array
   if (!monthNumber) {
     console.log("Invalid month name");
     return [];
@@ -425,25 +418,30 @@ const FindOutTimeAttendaceByMonthName = async (monthName) => {
         _id: 0,
         year: { $year: "$createdAt" },
         month: { $month: "$createdAt" },
-        monthName: parseInt(monthNumber), // Convert month number to integer
+        monthName: parseInt(monthNumber),
         date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-        // status: {
-        //   $cond: {
-        //     if: { $eq: [{ $size: "$attendance" }, 0] },
-        //     then: "absent",
-        //     else: {
-        //       $cond: [
-        //         {
-        //           $eq: [{ $arrayElemAt: ["$attendance.status", 0] }, "absent"],
-        //         },
-        //         "absent",
-        //         "present",
-        //       ],
-        //     },
-        //   },
-        // },
         name: 1,
         email: 1,
+        status: {
+          $cond: {
+            if: { $eq: [{ $size: "$attendance" }, 0] },
+            then: "absent",
+            else: {
+              $cond: [
+                {
+                  $eq: [{ $arrayElemAt: ["$attendance.status", 0] }, "absent"],
+                },
+                "absent",
+                "present",
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $match: {
+        status: "absent", // Filter only the attendance records where the status is "absent"
       },
     },
     {
@@ -462,7 +460,7 @@ const FindOutTimeAttendaceByMonthName = async (monthName) => {
         month: "$_id.month",
         monthName: {
           $arrayElemAt: [Object.values(monthNames), parseInt(monthNumber) - 1],
-        }, // Convert month number to index and get month name from array
+        },
         AbsentByDate: 1,
         totalAbsent: 1,
         names: 1,
@@ -471,7 +469,6 @@ const FindOutTimeAttendaceByMonthName = async (monthName) => {
     },
   ]);
 
-  // console.log("Attendance by month:", attendanceByMonth);
   return attendanceByMonth;
 };
 

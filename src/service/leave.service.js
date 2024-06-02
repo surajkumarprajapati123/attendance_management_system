@@ -1,4 +1,9 @@
-const { LeaveModel, UserModel } = require("../models");
+const {
+  LeaveModel,
+  UserModel,
+  AttendanceModel,
+  LeaveTypeModel,
+} = require("../models");
 const ErrorHandler = require("../utils/ErrorHandler");
 const moment = require("moment");
 const Schedule = require("node-schedule");
@@ -12,6 +17,14 @@ const {
 const { UserUpdateWithIdService } = require("./admin.service");
 
 // Import node-fetch library
+const LeaveType = async () => {
+  const leave = await LeaveTypeModel.findById({
+    _id: "66595b843911fa076762c6b0",
+  }).select("-_id -__v");
+  console.log("total leave types is available", leave);
+  return leave;
+};
+// LeaveType();
 
 const HolidaysDays = async (HOLIDAYS_YEAR, HOLIDAYS_MONTH) => {
   try {
@@ -25,6 +38,7 @@ const HolidaysDays = async (HOLIDAYS_YEAR, HOLIDAYS_MONTH) => {
 
     if (data.response && data.response.holidays) {
       const holidays = data.response.holidays;
+      // console.log("Holidays is ", holidays);
       holidays.forEach((holiday) => {
         const obj = {
           Holidays_Name: holiday.name,
@@ -41,7 +55,7 @@ const HolidaysDays = async (HOLIDAYS_YEAR, HOLIDAYS_MONTH) => {
         });
       }
 
-      console.log("Holidays data:", holidaysData);
+      // console.log("Holidays data:", holidaysData);
       return holidaysData;
     } else {
       console.log("No holidays found.");
@@ -54,7 +68,9 @@ const HolidaysDays = async (HOLIDAYS_YEAR, HOLIDAYS_MONTH) => {
 };
 
 // Example usage:
-// HolidaysDays("2024"); // Get holidays for the year 2024
+// HolidaysDays("2024").then((resulte) => {
+// console.log("rsulte is ", resulte);
+// }); // Get holidays for the year 2024
 // HolidaysDays("2024", 5); // Get holidays for May 2024
 
 // Function to generate a random string of specified length
@@ -67,262 +83,540 @@ const generateRandomString = (length) => {
   }
   return result;
 };
-// function calculateDateDifference(startDate, endDate) {
-//   const startDateParts = startDate.split("/");
-//   const endDateParts = endDate.split("/");
 
-//   const start = new Date(
-//     startDateParts[2],
-//     startDateParts[1] - 1,
-//     startDateParts[0]
-//   );
-//   const end = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0]);
+// };
 
-//   const difference = end.getTime() - start.getTime();
+// Function to calculate the number of leave days excluding weekends and holidays
+const calculateDays = async (startDate, endDate) => {
+  // Convert start and end dates to Date objects
+  const start = new Date(startDate);
+  const end = new Date(endDate);
 
-//   const daysDifference = Math.floor(difference / (1000 * 60 * 60 * 24));
-//   const monthsDifference = Math.floor(daysDifference / 30);
+  // Fetch holiday dates
+  const holidays = await HolidaysDays("2024");
+  // console.log("Holiday is ", holidays);
+  const HolidaysArray = holidays.map((date) => date.Holidays_Date); // Extract date part only
+  // console.log("Holidays array is", HolidaysArray);
+  // Initialize count of days and counts for Saturdays, Sundays, and holidays
+  let daysDifference = 0;
+  let saturdayCount = 0;
+  let sundayCount = 0;
+  let holidaysCount = 0;
+  let totalDays = 0;
 
-//   const remainingDays = daysDifference % 30;
-
-//   return `${remainingDays} days ${monthsDifference} months`;
-// }
-
-const createLeave = async (userId, userdata) => {
-  try {
-    const { dayRange, leaveType, reason, isVacation, address, document } =
-      userdata;
-    if (!reason) {
-      throw new ErrorHandler("Reason is a required field", 401);
-    }
-    const applyDate = Date.now(); // Using current timestamp as applyDate
-
-    const formattedApplyDate = moment(applyDate).toDate();
-    console.log("Apply Date: ", formattedApplyDate.toLocaleString());
-
-    const formattedDayRange = dayRange.map((date) =>
-      moment(date, "DD/MM/YYYY").toDate()
-    );
-
-    // Retrieve holidays for the month and year of the given date range
-    const holidays = await HolidaysDays(
-      moment(dayRange[0], "DD/MM/YYYY").year(),
-      moment(dayRange[0], "DD/MM/YYYY").month() + 1 // Moment.js month is 0-indexed
-    );
-
-    // Filter out Saturdays and Sundays and exclude holidays
-    const filteredDates = formattedDayRange.filter((date) => {
-      const dayOfWeek = moment(date).day();
-      return (
-        dayOfWeek !== 0 && // Exclude Sundays
-        dayOfWeek !== 6 && // Exclude Saturdays
-        !holidays.some(
-          (holiday) =>
-            moment(date).isBetween(holiday.start, holiday.end, null, "[]") // Include start and end dates
-        )
+  // Iterate through each day
+  while (start <= end) {
+    // Check if the current day is a holiday
+    if (HolidaysArray.includes(start.toISOString().split("T")[0])) {
+      holidaysCount++;
+      console.log(
+        "Holiday count is",
+        holidaysCount,
+        "and holiday date is",
+        start.toISOString().split("T")[0]
       );
-    });
+    } else {
+      // Check if the current day is not Saturday (6) or Sunday (0)
+      if (start.getDay() !== 6 && start.getDay() !== 0) {
+        daysDifference++;
+      } else {
+        // Count Saturdays and Sundays
+        if (start.getDay() === 6) {
+          saturdayCount++;
+        } else {
+          sundayCount++;
+        }
+      }
+    }
 
-    // Adjust leave duration based on non-holiday and non-weekend days
-    const leaveDuration = filteredDates.length;
-    console.log("Leave Duration: ", leaveDuration);
+    // Move to the next day
+    start.setDate(start.getDate() + 1);
+  }
+  totalDays = daysDifference + saturdayCount + sundayCount + holidaysCount;
+  let obj = {
+    totalDays: totalDays,
+    DiffernceDays: daysDifference,
+    saturdays: saturdayCount,
+    sundays: sundayCount,
+    holidayCount: holidaysCount,
+  };
+  return obj;
+};
 
-    // Other logic remains the same...
+// // Example usage:
+// const startDate = "2024-05-30"; // Monday
+// const endDate = "2024-06-15"; // Wednesday
+// calculateDays(startDate, endDate).then((result) => {
+//   console.log("Total number of days:", result.totalDays);
+//   console.log("Number of Saturdays:", result.saturdays);
+//   console.log("Number of Sundays:", result.sundays);
+//   console.log("Number of Holidays:", result.holidayCount);
+// });
 
-    // Create new leave entry
-    const newLeave = await LeaveModel.create({
-      userid: userId,
-      applyDate: formattedApplyDate,
-      dayRange: formattedDayRange,
-      leaveType,
-      noOfDays: leaveDuration,
+// calculateTotalDays("2024-10-02", "2024-10-05");
+
+const ApplyLeave = async (userId, userData) => {
+  const finduser = await LeaveModel.findOne({ employeeId: userId });
+  const generate = generateRandomString(8);
+  const userDetails = await UserModel.findById({ _id: userId });
+  const username = userDetails.username;
+  const useremail = userDetails.email;
+  const Application_Number =
+    username.slice(0, 3).toUpperCase() + "00" + generate;
+  console.log("useris ", finduser);
+  if (finduser) {
+    throw new ErrorHandler("Already user exits ", 401);
+  }
+  const { employeeId, startDate, endDate, reason, leaveType } = userData;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Check if start date is before end date
+  if (start > end) {
+    throw new Error("Start date cannot be after end date");
+  }
+
+  // Check if the start or end date is on a weekend
+  if (
+    start.getDay() === 6 ||
+    start.getDay() === 0 ||
+    end.getDay() === 6 ||
+    end.getDay() === 0
+  ) {
+    throw new Error("It is a weekend day");
+  }
+
+  // Fetch holidays and check if the start date is a holiday
+  const holidays = await HolidaysDays(start.getFullYear(), start.getMonth());
+  const HolidaysArray = holidays.map((date) => date.Holidays_Date);
+  if (HolidaysArray.includes(start.toISOString().split("T")[0])) {
+    throw new Error(
+      `This date ${start.toISOString().split("T")[0]} is already a holiday`
+    );
+  }
+
+  // Calculate the number of leave days
+  const numberOfDays = await calculateDays(start, end);
+  console.log("total days is", numberOfDays);
+
+  if (numberOfDays === -1) {
+    throw new Error("You can't apply for leave on weekends or holidays");
+  }
+
+  // Extract total days from numberOfDays object and convert to string
+  const days = numberOfDays.totalDays.toString();
+
+  // Find the user's leave type balance
+  const findLeaveType = await LeaveTypeModel.findOne({ user: userId });
+  console.log("find leave Types is ", findLeaveType);
+  const differenceDays = numberOfDays.DiffernceDays;
+  console.log("diffrence data is ", differenceDays);
+
+  if (!findLeaveType) {
+    throw new Error("User is not found for leave types");
+  }
+
+  // Check the leave type and decrement the corresponding leave count by differenceDays
+  if (leaveType === "sickLeave" && findLeaveType.sickLeave >= differenceDays) {
+    findLeaveType.sickLeave -= differenceDays;
+  } else if (
+    leaveType === "casualLeave" &&
+    findLeaveType.casualLeave >= differenceDays
+  ) {
+    findLeaveType.casualLeave -= differenceDays;
+  } else if (
+    leaveType === "parentalLeave" &&
+    findLeaveType.parentalLeave >= differenceDays
+  ) {
+    findLeaveType.parentalLeave -= differenceDays;
+  } else if (
+    leaveType === "maternityLeave" &&
+    findLeaveType.maternityLeave >= differenceDays
+  ) {
+    findLeaveType.maternityLeave -= differenceDays;
+  } else if (
+    leaveType === "paternityLeave" &&
+    findLeaveType.paternityLeave >= differenceDays
+  ) {
+    findLeaveType.paternityLeave -= differenceDays;
+  } else if (
+    leaveType === "compensatoryLeave" &&
+    findLeaveType.compensatoryLeave >= differenceDays
+  ) {
+    findLeaveType.compensatoryLeave -= differenceDays;
+  } else if (
+    leaveType === "bereavementLeave" &&
+    findLeaveType.bereavementLeave >= differenceDays
+  ) {
+    findLeaveType.bereavementLeave -= differenceDays;
+  } else {
+    throw new Error("Insufficient leave days for the requested leave type");
+  }
+  // Save the updated leave type balance
+  await findLeaveType.save();
+
+  // Save leave request to database
+  try {
+    const leave = await LeaveModel.create({
+      employeeId: userId,
+      startDate: start,
+      endDate: end,
       reason,
-      isVacation,
-      address,
-      document,
+      status: "pending", // Assuming default status is pending
+      days,
+      leaveType,
+      application_no: Application_Number, // Save total days as string
     });
-
-    console.log("New Leave Entry: ", newLeave);
-    // return newLeave; // You can return the newLeave object if needed
-  } catch (err) {
-    console.log("Error: ", err.message);
+    console.log("request leave is ", leave);
+    await SendMailLeaveAppliation(
+      useremail,
+      username,
+      Application_Number,
+      startDate,
+      endDate,
+      days
+    );
+    return leave;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to create leave application");
   }
 };
 
-const usersomedata = {
-  dayRange: [
-    "21/05/2024",
-    "22/05/2024",
-    "23/05/2024",
-    "24/05/2024",
-    "25/05/2024",
-    "26/05/2024",
-    "17/06/2024",
-  ],
-  leaveType: "Paid",
-  reason: "Family vacation",
-  isVacation: true,
-  address: "123 Vacation St, Beach City",
-  document: "leave_request.pdf",
+// Example usage of the function
+const leaveApplicationData = {
+  // Replace with actual employee ID
+  startDate: "2024-06-03", // Example start date
+  endDate: "2024-06-17", // Example end date
+  reason: "Vacation", // Example reason for leave
+  status: "pending", // Example status
+  // Example application number
+  block: false, // Example block status
+  DateAndtime: new Date(),
+  leaveType: "casualLeave", // Example creation date and time
+  // Will be calculated based on start and end date
 };
 
-// console.log(usersomedata);
-
-createLeave("66497dca7ee0abf5d8160dd1", usersomedata);
-const isValidDates = (startDate, endDate) => {
-  const [sDay, sMonth, sYear] = startDate.split("/");
-  const [eDay, eMonth, eYear] = endDate.split("/");
-  const start = new Date(`${sYear}-${sMonth}-${sDay}`);
-  const end = new Date(`${eYear}-${eMonth}-${eDay}`);
-  return end > start;
+// ApplyLeave("66497dca7ee0abf5d8160dd1", leaveApplicationData);
+// 😁😁😁😁😁
+const findLeaveTypeusingId = async (userID) => {
+  if (!userId) {
+    throw new ErrorHandler("invalid token", 401);
+  }
+  const leave = await LeaveTypeModel.findOne({ user: userID }).select(
+    "-_id -__v -user"
+  );
+  if (!leave) {
+    throw new ErrorHandler("Leave not found", 401);
+  }
+  console.log("updated leave type is ", leave);
+  return leave;
 };
-// const ApplyLeave = async (userid, usedata) => {
-//   const { startDate, endDate, reason } = usedata;
-//   const NewUser = await UserModel.findById(userid);
-//   const UserModelId = await LeaveModel.findOne({ employeeId: userid });
-//   console.log("find user is ", NewUser);
+// findLeaveTypeusingId("66497dca7ee0abf5d8160dd1");
 
-//   if (UserModelId) {
-//     throw new ErrorHandler(
-//       "You are already for apply leave application,wait for action",
-//       401
-//     );
-//   }
+const updateApplicationByid = async (leaveId, updateData) => {
+  const { status, reason, startDate, endDate, leaveType } = updateData;
 
-//   if (!NewUser) {
-//     throw new ErrorHandler("User is not found", 401);
-//   }
-//   const GenerateApplicationNumber = generateRandomString(5);
-//   const Application_Number =
-//     NewUser.name.toUpperCase().trim().split(" ")[0].slice(0, 3) +
-//     "00" +
-//     GenerateApplicationNumber;
-//   const totalleave = calculateDateDifference(startDate, endDate);
-//   if (!startDate || !endDate || !reason) {
-//     let errorMessage = "Missing fields: ";
-//     if (!startDate) errorMessage += "startDate, ";
-//     if (!endDate) errorMessage += "endDate, ";
-//     if (!reason) errorMessage += "reason";
-//     errorMessage = errorMessage.replace(/,\s*$/, ""); // Remove trailing comma and whitespace
-//     console.log(errorMessage);
-//     throw new ErrorHandler(errorMessage, 400);
-//   }
-//   if (!isValidDates(startDate, endDate)) {
-//     throw new ErrorHandler(
-//       "End date must be at least one day after start date.data formate DD/MM/YYYY",
-//       400
-//     );
-//   }
+  const start = new Date(startDate);
+  const end = new Date(endDate);
 
-//   const user = await LeaveModel.create({
-//     employeeId: userid,
-//     startDate,
-//     endDate,
-//     reason,
-//     application_no: Application_Number,
-//   });
-//   // user._id = undefined;
-//   // user.password = undefined;
-//   if (!user) {
-//     throw new ErrorHandler("User is not creating", 400);
-//   }
-//   await SendMailLeaveAppliation(
-//     NewUser.email,
-//     NewUser.username,
-//     Application_Number,
-//     startDate,
-//     endDate,
-//     totalleave
-//   );
-//   // console.log("new leave application user is ", user);
-//   return user;
-// };
-const userdata = {
-  startDate: "24/02/2024",
-  endDate: "28/02/2024",
-  reason: "important work at home",
-};
+  // Check if start date is before end date
+  if (start > end) {
+    throw new Error("Start date cannot be after end date");
+  }
 
-// ApplyLeave("663caeed99d2f6f9c83bbed6", userdata);
-const updateApplicationByid = async (userid, userdata) => {
-  let user;
-  const { startDate, endDate, reason, application_no } = userdata;
-  if (!isValidDates(startDate, endDate)) {
+  // Check if the start or end date is on a weekend
+  if (
+    start.getDay() === 6 ||
+    start.getDay() === 0 ||
+    end.getDay() === 6 ||
+    end.getDay() === 0
+  ) {
+    throw new Error("It is a weekend day");
+  }
+
+  // Fetch holidays and check if the start date is a holiday
+  const holidays = await HolidaysDays(start.getFullYear(), start.getMonth());
+  const HolidaysArray = holidays.map((date) => date.Holidays_Date);
+  if (HolidaysArray.includes(start.toISOString().split("T")[0])) {
+    throw new Error(
+      `This date ${start.toISOString().split("T")[0]} is already a holiday`
+    );
+  }
+
+  // Calculate the number of leave days
+  const numberOfDays = await calculateDays(start, end);
+  console.log("total days is", numberOfDays);
+
+  if (numberOfDays === -1) {
+    throw new Error("You can't apply for leave on weekends or holidays");
+  }
+
+  // Extract total days from numberOfDays object and convert to string
+  const days = numberOfDays.totalDays.toString();
+  const differenceDays = numberOfDays.DiffernceDays;
+
+  // Find the user's leave type balance
+  const leaveRequest = await LeaveModel.findOne({ employeeId: leaveId });
+  const userdetals = await UserModel.findById({ _id: leaveId });
+
+  const useremail = userdetals.email;
+  const username = userdetals.username;
+  // console.log("user details is ", userdetals);
+  // console.log("leave request is ", leaveRequest);
+  if (!leaveRequest) {
+    throw new Error("Leave request not found");
+  }
+
+  const userId = leaveRequest.employeeId;
+  const findLeaveType = await LeaveTypeModel.findOne({ user: userId });
+  if (!findLeaveType) {
+    throw new Error("User is not found for leave types");
+  }
+
+  // Check the leave type and decrement the corresponding leave count by differenceDays
+  if (leaveType === "sickLeave" && findLeaveType.sickLeave >= differenceDays) {
+    findLeaveType.sickLeave -= differenceDays;
+  } else if (
+    leaveType === "casualLeave" &&
+    findLeaveType.casualLeave >= differenceDays
+  ) {
+    findLeaveType.casualLeave -= differenceDays;
+  } else if (
+    leaveType === "parentalLeave" &&
+    findLeaveType.parentalLeave >= differenceDays
+  ) {
+    findLeaveType.parentalLeave -= differenceDays;
+  } else if (
+    leaveType === "maternityLeave" &&
+    findLeaveType.maternityLeave >= differenceDays
+  ) {
+    findLeaveType.maternityLeave -= differenceDays;
+  } else if (
+    leaveType === "paternityLeave" &&
+    findLeaveType.paternityLeave >= differenceDays
+  ) {
+    findLeaveType.paternityLeave -= differenceDays;
+  } else if (
+    leaveType === "compensatoryLeave" &&
+    findLeaveType.compensatoryLeave >= differenceDays
+  ) {
+    findLeaveType.compensatoryLeave -= differenceDays;
+  } else if (
+    leaveType === "bereavementLeave" &&
+    findLeaveType.bereavementLeave >= differenceDays
+  ) {
+    findLeaveType.bereavementLeave -= differenceDays;
+  } else {
     throw new ErrorHandler(
-      "End date must be at least one day after start date . data formate DD/MM/YYYY",
+      "Insufficient leave balance for the requested leave type",
       400
     );
   }
-  const UserData = await UserModel.findById({ _id: userid });
-  const useremail = UserData.email;
-  const username = UserData.username;
-  const leaveModel = await LeaveModel.findOne({ employeeId: userid });
-  // console.log("leave model ", leaveModel);
-  user = await LeaveModel.findOneAndUpdate({ _id: leaveModel._id }, userdata, {
-    new: true,
-  });
-  // console.log("user id ", user);
-  if (!user) {
-    throw new ErrorHandler("User is not found", 400);
+
+  // Save the updated leave type balance
+  await findLeaveType.save();
+
+  // Update leave request in the database
+  leaveRequest.status = status || leaveRequest.status;
+  leaveRequest.reason = reason || leaveRequest.reason;
+  leaveRequest.startDate = startDate || leaveRequest.startDate;
+  leaveRequest.endDate = endDate || leaveRequest.endDate;
+  leaveRequest.days = days;
+  leaveRequest.leaveType = leaveType || leaveRequest.leaveType;
+
+  try {
+    await leaveRequest.save();
+    await SendMailUpdatedLeaveAppliation(
+      useremail,
+      username,
+      leaveRequest.application_no,
+      startDate,
+      endDate,
+      days
+    );
+    console.log("Leave request updated successfully", leaveRequest);
+    return leaveRequest;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to update leave application");
   }
-  // console.log("Update user is ", user);
-  const totalleave = calculateDateDifference(startDate, endDate);
-  await SendMailUpdatedLeaveAppliation(
-    useremail,
-    username,
-    leaveModel.application_no,
-    leaveModel.startDate,
-    leaveModel.endDate,
-    totalleave
-  );
-  return user;
 };
+// Example usage of the function
+// const updateData = {
+//   status: "approved", // Example new status
+//   reason: "Personal reason", // Example new reason
+//   startDate: "2024-06-10", // Example new start date
+//   endDate: "2024-06-20", // Example new end date
+//   leaveType: "casualLeave", // Example new leave type
+// };
+
+// // Call the function with example data
+
+// updateApplicationByid("66497dca7ee0abf5d8160dd1", updateData)
+//   .then((leave) => console.log("Leave update successful", leave))
+//   .catch((error) => console.log("Error updating leave", error));
+
 const updateApplicationByApplicationID = async (
   userid,
-  userdata,
-  application_no
+  application_no,
+  updateData
 ) => {
-  let user;
-  // console.log("application number is ", application_no);
-  const { startDate, endDate, reason } = userdata;
-  const useremp = await LeaveModel.findOne({ employeeId: userid });
-  const userdataformddb = await UserModel.findById({ _id: userid });
-  // console.log("user for leave model ", useremp);
-  // console.log("from user modle ", userdataformddb);
-  const useremail = userdataformddb.email;
-  const username = userdataformddb.username;
-  if (!useremp) {
-    throw new ErrorHandler("User not found", 401);
+  const userdetail = await LeaveModel.findOne({ employeeId: userid });
+  if (!userdetail) {
+    throw new Error("This user is not registered");
   }
-  if (!isValidDates(startDate, endDate)) {
-    throw new ErrorHandler(
-      "End date must be at least one day after start date . data formate DD/MM/YYYY",
-      400
+
+  const { status, reason, startDate, endDate, leaveType } = updateData;
+
+  // Ensure startDate and endDate are valid
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (isNaN(start) || isNaN(end)) {
+    throw new Error("Invalid startDate or endDate");
+  }
+
+  // Check if start date is before end date
+  if (start > end) {
+    throw new Error("Start date cannot be after end date");
+  }
+
+  // Check if the start or end date is on a weekend
+  if (
+    start.getDay() === 6 ||
+    start.getDay() === 0 ||
+    end.getDay() === 6 ||
+    end.getDay() === 0
+  ) {
+    throw new Error("It is a weekend day");
+  }
+
+  // Fetch holidays and check if the start date is a holiday
+  console.log("start date is ", start.getFullYear());
+  const holidays = await HolidaysDays(start.getFullYear(), start.getMonth());
+  // console.log("holidays array is ", holidays);
+  const HolidaysArray = holidays.map((date) => date.Holidays_Date);
+  // console.log("Holidays dates are ", HolidaysArray);
+  if (HolidaysArray.includes(start.toISOString().split("T")[0])) {
+    throw new Error(
+      `This date ${start.toISOString().split("T")[0]} is already a holiday`
     );
   }
-  user = await LeaveModel.findOneAndUpdate(
-    { application_no: application_no },
-    userdata,
-    {
-      new: true,
-    }
-  );
-  // console.log("user id ", user);
-  if (!user) {
-    throw new ErrorHandler("User is not found", 400);
+
+  // Calculate the number of leave days
+  const numberOfDays = await calculateDays(start, end);
+  console.log("total days is", numberOfDays);
+
+  if (numberOfDays === -1) {
+    throw new Error("You can't apply for leave on weekends or holidays");
   }
-  const totalleave = calculateDateDifference(startDate, endDate);
-  console.log("Update user is ", user);
-  await SendMailUpdatedLeaveAppliation(
-    useremail,
-    username,
-    user.application_no,
-    user.startDate,
-    user.endDate,
-    totalleave
-  );
-  return user;
+
+  // Extract total days from numberOfDays object and convert to string
+  const days = numberOfDays.totalDays.toString();
+  const differenceDays = numberOfDays.DiffernceDays;
+
+  // Find the leave request by application number
+  const leaveRequest = await LeaveModel.findOne({ application_no });
+  const userdetails = await UserModel.findOne({ _id: leaveRequest.employeeId });
+  console.log("user details is ", userdetails);
+  const useremail = userdetails.email;
+  const username = userdetail.username;
+  console.log("leave request is ", leaveRequest);
+  if (!leaveRequest) {
+    throw new Error("Leave request not found");
+  }
+
+  const userId = leaveRequest.employeeId;
+  const findLeaveType = await LeaveTypeModel.findOne({ user: userId });
+  if (!findLeaveType) {
+    throw new Error("User is not found for leave types");
+  }
+
+  // Check the leave type and decrement the corresponding leave count by differenceDays
+  if (leaveType === "sickLeave" && findLeaveType.sickLeave >= differenceDays) {
+    findLeaveType.sickLeave -= differenceDays;
+  } else if (
+    leaveType === "casualLeave" &&
+    findLeaveType.casualLeave >= differenceDays
+  ) {
+    findLeaveType.casualLeave -= differenceDays;
+  } else if (
+    leaveType === "parentalLeave" &&
+    findLeaveType.parentalLeave >= differenceDays
+  ) {
+    findLeaveType.parentalLeave -= differenceDays;
+  } else if (
+    leaveType === "maternityLeave" &&
+    findLeaveType.maternityLeave >= differenceDays
+  ) {
+    findLeaveType.maternityLeave -= differenceDays;
+  } else if (
+    leaveType === "paternityLeave" &&
+    findLeaveType.paternityLeave >= differenceDays
+  ) {
+    findLeaveType.paternityLeave -= differenceDays;
+  } else if (
+    leaveType === "compensatoryLeave" &&
+    findLeaveType.compensatoryLeave >= differenceDays
+  ) {
+    findLeaveType.compensatoryLeave -= differenceDays;
+  } else if (
+    leaveType === "bereavementLeave" &&
+    findLeaveType.bereavementLeave >= differenceDays
+  ) {
+    findLeaveType.bereavementLeave -= differenceDays;
+  } else {
+    throw new Error("Insufficient leave balance for the requested leave type");
+  }
+
+  // Save the updated leave type balance
+  await findLeaveType.save();
+
+  // Update leave request in the database
+  leaveRequest.status = status || leaveRequest.status;
+  leaveRequest.reason = reason || leaveRequest.reason;
+  leaveRequest.startDate = startDate || leaveRequest.startDate;
+  leaveRequest.endDate = endDate || leaveRequest.endDate;
+  leaveRequest.days = days;
+  leaveRequest.leaveType = leaveType || leaveRequest.leaveType;
+
+  try {
+    await leaveRequest.save();
+    await SendMailUpdatedLeaveAppliation(
+      useremail,
+      username,
+      application_no,
+      startDate,
+      endDate,
+      days
+    );
+    console.log("Leave request updated successfully", leaveRequest);
+    return leaveRequest;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to update leave application");
+  }
 };
+
+// // Example usage of the function
+// const updateData = {
+//   status: "approved", // Example new status
+//   reason: "Personal reason", // Example new reason
+//   startDate: "2024-06-17", // Example new start date
+//   endDate: "2024-06-20", // Example new end date
+//   leaveType: "sickLeave", // Example new leave type
+// };
+
+// Call the function with example data
+// updateApplicationByApplicationID(
+//   "66497dca7ee0abf5d8160dd1",
+//   "MAN0082157139",
+//   updateData
+// )
+//   .then((leave) => console.log("Leave update successful", leave))
+//   .catch((error) => console.log("Error updating leave", error));
 
 const getPendingAllApplicationList = async () => {
   const data = await LeaveModel.find({ status: "pending" }).populate({
@@ -388,12 +682,10 @@ const SearchbyApplicationNumber = async (Serachdata) => {
 const ApprovedLeave = async (userid) => {
   const userdata = await LeaveModel.findById({ _id: userid });
   const datausermodel = await UserModel.findById({ _id: userdata.employeeId });
-  console.log("user data is ", datausermodel);
-  console.log("user detauls ", userdata);
-  const totalleave = calculateDateDifference(
-    userdata.startDate,
-    userdata.endDate
-  );
+  // console.log("user data is ", datausermodel);
+  // console.log("user detauls ", userdata);
+  const totalleave = await calculateDays(userdata.startDate, userdata.endDate);
+  // console.log("Total leave is ", totalleave.totalDays);
   // console.log("totalleave", totalleave, "second time ", data.endDate);
   const useremail = datausermodel.email;
   const username = datausermodel.username;
@@ -417,10 +709,11 @@ const ApprovedLeave = async (userid) => {
     userdata.application_no,
     userdata.startDate,
     userdata.endDate,
-    totalleave
+    totalleave.totalDays
   );
   return userdata;
 };
+// ApprovedLeave("665a8d735bd10586a1cf4508");
 const RejectedLeave = async (userid, userdata1) => {
   const { reason } = userdata1;
   const leaves = await LeaveModel.findById({ _id: userid });
@@ -470,66 +763,66 @@ const RejectedLeave = async (userid, userdata1) => {
 const SomedataReason = {
   reason: "only checking for time",
 };
-// RejectedLeave("6644857ba91e6ab2bf7de4ff", SomedataReason);
+// RejectedLeave("665a8d735bd10586a1cf4508", SomedataReason);
 
-const TimeManagementForApplication = async (userid) => {
-  try {
-    const data = await LeaveModel.findOne({ employeeId: userid });
-    console.log("time management data is ", data);
-    const userdata = await UserModel.findById(userid);
-    const useremail = userdata.email;
-    const username = userdata.username;
-    console.log("user data is ", userdata);
-    if (!data) {
-      throw new ErrorHandler("No previous application found", 404);
-    }
+// const TimeManagementForApplication = async (userid) => {
+//   try {
+//     const data = await LeaveModel.findOne({ employeeId: userid });
+//     console.log("time management data is ", data);
+//     const userdata = await UserModel.findById(userid);
+//     const useremail = userdata.email;
+//     const username = userdata.username;
+//     console.log("user data is ", userdata);
+//     if (!data) {
+//       throw new ErrorHandler("No previous application found", 404);
+//     }
 
-    const DateAndtime = data.DateAndtime;
+//     const DateAndtime = data.DateAndtime;
 
-    // Calculate time elapsed since the last application
-    const timeElapsed = Date.now() - DateAndtime.getTime();
-    const minutesElapsed = Math.floor(timeElapsed / (60 * 1000));
-    console.log("Time Elapsed (minutes):", minutesElapsed);
+//     // Calculate time elapsed since the last application
+//     const timeElapsed = Date.now() - DateAndtime.getTime();
+//     const minutesElapsed = Math.floor(timeElapsed / (60 * 1000));
+//     console.log("Time Elapsed (minutes):", minutesElapsed);
 
-    // Calculate remaining time
-    const timeRemaining = (2 - minutesElapsed) * 60 * 1000;
-    console.log("Time remaining (milliseconds):", timeRemaining);
+//     // Calculate remaining time
+//     const timeRemaining = (2 - minutesElapsed) * 60 * 1000;
+//     console.log("Time remaining (milliseconds):", timeRemaining);
 
-    // If remaining time is negative or zero, no need to schedule anything
-    if (timeRemaining <= 0) {
-      console.log("No action required. Time has already elapsed.");
-      return;
-    }
+//     // If remaining time is negative or zero, no need to schedule anything
+//     if (timeRemaining <= 0) {
+//       console.log("No action required. Time has already elapsed.");
+//       return;
+//     }
 
-    // Schedule a job to send a notification after 2 minutes
-    const scheduleTime = new Date(Date.now() + timeRemaining);
-    console.log("Schedule time:", scheduleTime);
+//     // Schedule a job to send a notification after 2 minutes
+//     const scheduleTime = new Date(Date.now() + timeRemaining);
+//     console.log("Schedule time:", scheduleTime);
 
-    const job = Schedule.scheduleJob(scheduleTime, async () => {
-      data.block = false;
-      await data.save();
-      console.log("data", data);
-      console.log(
-        "2 minutes elapsed. Sending notification email... You can again send Leave application"
-      );
-      // await TimeApplicationEmailTemplate(
-      //   useremail,
-      //   username,
-      //   data.application_no,
-      //   timeRemaining
-      // );
-      // sendNotificationEmail(data.email, "Reapplication Notification", "You can now reapply for leave.");
-    });
+//     const job = Schedule.scheduleJob(scheduleTime, async () => {
+//       data.block = false;
+//       await data.save();
+//       console.log("data", data);
+//       console.log(
+//         "2 minutes elapsed. Sending notification email... You can again send Leave application"
+//       );
+//       // await TimeApplicationEmailTemplate(
+//       //   useremail,
+//       //   username,
+//       //   data.application_no,
+//       //   timeRemaining
+//       // );
+//       // sendNotificationEmail(data.email, "Reapplication Notification", "You can now reapply for leave.");
+//     });
 
-    data.block = true;
-    // Calculate the time when the notification will be sent
-    const notificationTime = new Date(Date.now() + timeRemaining);
-    console.log("Notification will be sent at:", notificationTime);
-  } catch (error) {
-    console.error("Error in TimeManagementForApplication:", error.message);
-    throw error; // Re-throwing the error for handling at the caller level
-  }
-};
+//     data.block = true;
+//     // Calculate the time when the notification will be sent
+//     const notificationTime = new Date(Date.now() + timeRemaining);
+//     console.log("Notification will be sent at:", notificationTime);
+//   } catch (error) {
+//     console.error("Error in TimeManagementForApplication:", error.message);
+//     throw error; // Re-throwing the error for handling at the caller level
+//   }
+// };
 
 const ReapplyLeaveApplication = async (userid, userdata) => {
   try {
@@ -609,7 +902,7 @@ const reapplyData = {
 // ApprovedLeave("6644857ba91e6ab2bf7de4ff");
 
 module.exports = {
-  // ApplyLeave,
+  ApplyLeave,
   updateApplicationByid,
   getPendingAllApplicationList,
   getrejectedAllApplicationList,
@@ -620,6 +913,8 @@ module.exports = {
   RejectedLeave,
   ReapplyLeaveApplication,
   HolidaysDays,
+  LeaveType,
+  findLeaveTypeusingId,
   // ReApplyApplication,
   // calculateDateDifference,
 };
