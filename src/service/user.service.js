@@ -1,4 +1,10 @@
-const { UserModel, OtpModel, TokenModel, UserNameModel } = require("../models");
+const {
+  UserModel,
+  OtpModel,
+  TokenModel,
+  UserNameModel,
+  LeaveTypeModel,
+} = require("../models");
 const ErrorHandler = require("../utils/ErrorHandler");
 const jwt = require("jsonwebtoken");
 const { SendOnlyEmailForgate } = require("./EmailSend");
@@ -307,6 +313,10 @@ const VerifyOtp = async (userdata) => {
     throw new ErrorHandler("Invalid otp", 401);
   }
   user = await UserModel.findOne({ email: user.email });
+  // here a create a LeaveTypeModle
+  await LeaveTypeModel.create({
+    user: user._id,
+  });
   user.isVerified = true;
   user.save();
   return user;
