@@ -19,6 +19,7 @@ router
 router
   .route("/avatar-update")
   .put(AdminAuth, upload.single("avatar"), AdminController.UpdateAdminAvatar);
+
 router.route("/create").post(AdminAuth, AdminController.ApplyLeaveApplication);
 
 router.get("/test", (req, res) => {
