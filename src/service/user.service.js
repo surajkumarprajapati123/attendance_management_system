@@ -17,7 +17,7 @@ const randomString = require("randomstring");
 const RegisterUser = async (req, userdata) => {
   let user;
 
-  const { name, email, username, password, role } = userdata;
+  const { name, email, username, password, role, departmentName } = userdata;
 
   if (password.length == 0) {
     throw new ErrorHandler("Password must be between 3  to 8 character");
@@ -26,6 +26,9 @@ const RegisterUser = async (req, userdata) => {
     throw new ErrorHandler("All fields are required", 401);
   } else if (!password) {
     throw new ErrorHandler("Password is required", 401);
+  } else if (!name) {
+  } else if (!departmentName) {
+    throw new ErrorHandler("departmentName is required", 401);
   } else if (!name) {
     throw new ErrorHandler("Name is required", 401);
   } else if (!email) {
@@ -44,7 +47,7 @@ const RegisterUser = async (req, userdata) => {
   if (user) {
     throw new ErrorHandler("Already Register User", 401);
   }
-  // console.log("req.file", req.file);
+  // // console.log("req.file", req.file);
   const avatar = req.file?.path;
   // console.log("avatart", avatar);
   const avatarimage = await UploadfileOnCloudinary(avatar);
@@ -57,6 +60,7 @@ const RegisterUser = async (req, userdata) => {
     throw new ErrorHandler("This username is already use other user", 401);
   } else {
     user = await UserModel.create({ ...userdata, avatar: avatarimage.url });
+    // user = await UserModel.create(userdata);
 
     await UserNameModel.create({
       userid: user._id,
@@ -69,10 +73,24 @@ const RegisterUser = async (req, userdata) => {
   return user;
 };
 
+// const userData = {
+//   name: "Charlie Brown",
+//   email: "charlie.brown@yopmail.com",
+//   password: "hashed", // Hashed password should be used
+//   username: "charlieb23",
+//   phone: "1234567890",
+//   avatar: "https://example.com/avatar.jpg",
+//   isVerified: true,
+//   departmentName: "marketing",
+// };
+
+// RegisterUser("d", userData).then((resulte) => {
+//   console.log("user is created ", resulte);
+// });
 const Login = async (userData) => {
   const { password, username, email } = userData;
-  console.log("login password", password);
-  console.log(" login type of password", typeof password);
+  // console.log("login password", password);
+  // console.log(" login type of password", typeof password);
   if (!email && !username) {
     throw new ErrorHandler("Enter email or username", 401);
   }
@@ -96,7 +114,7 @@ const Login = async (userData) => {
 
     // Assuming user.comparePassword() is an asynchronous function
     const isCorrectPassword = await user.comparePassword(password);
-    console.log(isCorrectPassword);
+    // console.log(isCorrectPassword);
     if (!isCorrectPassword) {
       throw new ErrorHandler("Password is incorrect", 401);
     }
@@ -199,8 +217,8 @@ const resetPassword = async (passwordData, token) => {
     }
 
     // Log current time and decoded token time
-    console.log("Current time: ", new Date());
-    console.log("Token expiry time: ", new Date(decodedToken.expires));
+    // console.log("Current time: ", new Date());
+    // console.log("Token expiry time: ", new Date(decodedToken.expires));
 
     // Check if token has expired
     if (Date.now() > decodedToken.expires) {
@@ -259,7 +277,7 @@ const updateUser = async (userId, userData) => {
     let user;
 
     // Extract email and password from userData
-    const { email, password, name, username, role } = userData;
+    const { email, password, name, username, role, departmentName } = userData;
 
     // Check if email is provided in the userData
     if (email) {
@@ -283,7 +301,7 @@ const updateUser = async (userId, userData) => {
     if (!AllUSer) {
       throw new ErrorHandler("User is not found for this username", 401);
     }
-    console.log("This is a all user", AllUSer);
+    // console.log("This is a all user", AllUSer);
     if (AllUSer.find((user) => user.username === username)) {
       throw new ErrorHandler(
         "Thise username is already use other user try other",
@@ -341,7 +359,7 @@ const updateAvatar = async (req, userId) => {
 
     // Get the user document and extract the previous avatar URL
     const user = await UserModel.findById(userId);
-    console.log("user is updatng show ", user);
+    // console.log("user is updatng show ", user);
     const previousAvatarUrl = user.avatar;
 
     // Delete previous avatar image from Cloudinary
@@ -356,7 +374,7 @@ const updateAvatar = async (req, userId) => {
       { new: true }
     ).select("-password");
 
-    console.log("Updated user:", updatedUser);
+    // console.log("Updated user:", updatedUser);
 
     return updatedUser;
   } catch (error) {
@@ -482,7 +500,38 @@ const useridfindbytoken = async (userid) => {
   return token._id;
 };
 
+const findDepartmentAllUser = async (UserId, userdate) => {
+  const { departmentName } = userdate;
+
+  // Check if departmentName is provided
+  if (!departmentName) {
+    throw new ErrorHandler("Please select the department", 401);
+  }
+
+  try {
+    // Find all users with the specified departmentName, excluding the specified UserId
+    const users = await UserModel.find({
+      _id: { $ne: UserId },
+      departmentName: departmentName,
+    });
+
+    // console.log(
+    //   "All users in the department (excluding specified user):",
+    //   users
+    // );
+    return users;
+  } catch (error) {
+    console.error("Error finding users:", error);
+    throw error;
+  }
+};
+
+const userdate2 = {
+  departmentName: "sales",
+};
+// findDepartmentAllUser("66614c435408c08b28c666e4", userdate2);
 module.exports = {
+  findDepartmentAllUser,
   RegisterUser,
   Login,
   findAlluser,

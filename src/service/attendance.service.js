@@ -466,7 +466,7 @@ const OutTimeAttendance = async (userid) => {
   }
 };
 
-OutTimeAttendance("66482adfe6e69f140a372dc6");
+// OutTimeAttendance("66482adfe6e69f140a372dc6");
 
 const FindOutTimeAttendaceByCurrentMonth = async (userid) => {
   if (!mongoose.Types.ObjectId.isValid(userid)) {
@@ -597,7 +597,7 @@ const FindOutTimeAttendaceByCurrentMonth = async (userid) => {
   );
   const ouput = [...transformedData, { TotalAbsent: totalAbsent }];
 
-  console.log("resulte is attendane by month is", ouput);
+  // console.log("resulte is attendane by month is", ouput);
 
   return ouput;
 };
@@ -704,7 +704,7 @@ const FindOutTimeAttendanceByMonthByUserid = async (
       })),
     };
   });
-  console.log("Attendance is: ", attendanceObj);
+  // console.log("Attendance is: ", attendanceObj);
   return attendanceObj;
 };
 
@@ -840,7 +840,7 @@ const FindOutTimeAttendaceByMonthName = async (monthName) => {
   );
 
   if (!monthNumber) {
-    console.log("Invalid month name");
+    // console.log("Invalid month name");
     return [];
   }
 
@@ -1181,7 +1181,7 @@ const FindOutTimeAttendanceByMonthByAdminOnly2 = async (
         })),
       };
     });
-    console.log("data is ", attendanceObj);
+    // console.log("data is ", attendanceObj);
     return attendanceObj;
   } catch (error) {
     console.error("Error fetching attendance:", error);

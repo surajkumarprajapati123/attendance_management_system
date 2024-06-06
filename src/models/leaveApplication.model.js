@@ -55,6 +55,9 @@ const leaveApplicationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    departmentName: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

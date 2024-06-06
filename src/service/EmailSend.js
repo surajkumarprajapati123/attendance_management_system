@@ -160,7 +160,7 @@ const TimeApplicationEmailTemplate = async (
     console.log("error is:", error);
   }
 };
-console.log("working 1");
+// console.log("working 1");
 // ApprovedApplicationEmailTemplate(
 //   "surajkumar@yopmail.com",
 //   "surajkumar",
@@ -185,7 +185,7 @@ const GeneratorOtp = async (emaildata) => {
     email: emaildata,
     otp: result.toUpperCase(),
   });
-  console.log(Otp);
+  // console.log(Otp);
   return Otp;
 };
 

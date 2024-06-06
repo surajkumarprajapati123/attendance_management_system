@@ -22,6 +22,13 @@ router
 
 router.route("/create").post(AdminAuth, AdminController.ApplyLeaveApplication);
 
+router
+  .route("/department-find/:departmentName")
+  .post(AdminAuth, AdminController.FindAllStudentUsingDepartment);
+router
+  .route("/department-assign/:UserId")
+  .put(AdminAuth, AdminController.ChangeDepartmentUsingUserId);
+
 router.get("/test", (req, res) => {
   //   console.log(req.user);
   res.send("testing routng is working");
@@ -29,22 +36,50 @@ router.get("/test", (req, res) => {
 module.exports = router;
 
 // Update User by id
+
 /**
  * @swagger
- * /admin/update/{id}:
- *   put:
- *     summary: Update user by ID
- *     description: Update the user's information by ID.
- *     tags: [Admin]
+ * /admin/department-find/{departmentName}:
+ *   post:
+ *     summary: Find all users by department name
+ *     description: Retrieves all users belonging to the specified department.
+ *     tags: [Department]
  *     security:
- *       - bearerAuth: []
+ *       - AdminAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: departmentName
+ *         type: string
  *         required: true
+ *         description: The name of the department to search users for.
+ *     responses:
+ *       200:
+ *         description: Success. Returns users in the specified department.
  *         schema:
- *           type: string
- *         description: ID of the user to update
+ *           type: array
+ *           items:
+ *             $ref: '#/definitions/User'
+ *       401:
+ *         description: Unauthorized. User does not have admin access.
+ *       500:
+ *         description: Internal Server Error. Failed to retrieve users.
+ */
+
+/**
+ * @swagger
+ * /admin/department-assign/{UserId}:
+ *   put:
+ *     summary: Change department by user ID
+ *     description: Changes the department of a user based on their user ID.
+ *     tags: [Department]
+ *     security:
+ *       - AdminAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: UserId
+ *         type: string
+ *         required: true
+ *         description: The ID of the user to change the department for.
  *     requestBody:
  *       required: true
  *       content:
@@ -52,35 +87,61 @@ module.exports = router;
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               departmentName:
  *                 type: string
- *                 description: New name for the user
- *               email:
- *                 type: string
- *                 format: email
- *                 description: New email for the user
- *               username:
- *                 type: string
- *                 description: New username for the user
- *             example:
- *               name: New Name
- *               email: newemail@example.com
- *               username: newusername
+ *                 description: The new department name for the user.
  *     responses:
- *       "200":
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       "400":
- *         $ref: '#/components/responses/BadRequest'
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *       "403":
- *         $ref: '#/components/responses/Forbidden'
- *       "404":
- *         $ref: '#/components/responses/NotFound'
+ *       200:
+ *         description: Success. Returns the updated user.
+ *         schema:
+ *           $ref: '#/definitions/User'
+ *       401:
+ *         description: Unauthorized. User does not have admin access.
+ *       404:
+ *         description: Not Found. User with the provided ID not found.
+ *       500:
+ *         description: Internal Server Error. Failed to update user department.
+ */
+
+/**
+ * @swagger
+ * /admin/department-assign/{UserId}:
+ *   put:
+ *     summary: Change department by user ID
+ *     description: Changes the department of a user based on their user ID and assigns a permission.
+ *     tags: [Department]
+ *     security:
+ *       - AdminAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: UserId
+ *         type: string
+ *         required: true
+ *         description: The ID of the user to change the department for.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               departmentName:
+ *                 type: string
+ *                 description: The new department name for the user.
+ *               permission:
+ *                 type: string
+ *                 description: The permission to assign to the user in the new department.
+ *     responses:
+ *       200:
+ *         description: Success. Returns the updated user.
+ *         schema:
+ *           $ref: '#/definitions/User'
+ *       401:
+ *         description: Unauthorized. User does not have admin access.
+ *       404:
+ *         description: Not Found. User with the provided ID not found.
+ *       500:
+ *         description: Internal Server Error. Failed to update user department.
  */
 
 // Delete user by id

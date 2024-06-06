@@ -14,7 +14,8 @@ const UserUpdateWithIdService = async (adminid, userData) => {
     let user;
 
     // Extract email and password from userData
-    const { email, password, username, name, avatar, role } = userData;
+    const { email, password, username, name, avatar, role, departmentHead } =
+      userData;
 
     const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!pattern.test(email)) {
@@ -156,7 +157,7 @@ const useridfindbytoken = async (userid) => {
   }
   const token = await TokenModel.findOne({ user: user._id });
 
-  console.log("token of admin side", token);
+  // console.log("token of admin side", token);
   if (!token) {
     throw new ErrorHandler("User token is not found", 401);
   }
@@ -180,7 +181,7 @@ const UpdatedAdminAvatar = async (req, userId) => {
 
     // Get the user document and extract the previous avatar URL
     const user = await UserModel.findById(userId);
-    console.log("user is updatng show ", user);
+    // console.log("user is updatng show ", user);
     const previousAvatarUrl = user.avatar;
 
     // Delete previous avatar image from Cloudinary
@@ -195,7 +196,7 @@ const UpdatedAdminAvatar = async (req, userId) => {
       { new: true }
     ).select("-password -email");
 
-    console.log("Updated user:", updatedUser);
+    // console.log("Updated user:", updatedUser);
 
     return updatedUser;
   } catch (error) {
@@ -207,9 +208,9 @@ const ApplyLeaveadmin = async (userid, usedate) => {
   const { startDate, endDate, reason } = usedate;
   const totalleave = calculateDateDifference(startDate, endDate);
   const FindadminId = await UserModel.findById(userid);
-  console.log("user id is ", FindhrId);
+  // console.log("user id is ", FindhrId);
   const Findhr = await UserModel.findOne({ role: "hr" });
-  console.log("admin data is ", Findhr);
+  // console.log("admin data is ", Findhr);
   const hrEmail = Findhr.email;
   if (Findhr.role !== "admin") {
     throw new ErrorHandler(
@@ -227,7 +228,7 @@ const ApplyLeaveadmin = async (userid, usedate) => {
     apply.endDate,
     totalleave
   );
-  console.log("apply is ", apply);
+  // console.log("apply is ", apply);
 };
 
 const updateAdminLeaveApplication = async (userid, data) => {
@@ -257,7 +258,49 @@ const SearchbyApplicationNumber = async (Serachdata) => {
   return user;
 };
 
-// SearchbyApplicationNumber("UPD0005305");
+const FindUserDepartMentWise = async (Serachdata) => {
+  const user = await UserModel.find({
+    departmentName: { $regex: Serachdata, $options: "i" },
+    role: { $ne: "hr" },
+  }).select("-_id");
+
+  // console.log("Search user is ", user);
+  if (!user) {
+    throw new ErrorHandler(
+      `User is not found for This applicaiton ${departmentName}`
+    );
+  }
+  // console.log("all user is", user);
+  return user;
+};
+
+const updateDepartmentHead = async (UserId, DepartmentDate) => {
+  const { permission, departmentName } = DepartmentDate;
+  let user = await UserModel.findById(UserId);
+
+  if (user.departmentName === departmentName) {
+    user.role = "hr";
+    user.departmentHead = permission;
+    user.assign = true;
+
+    await user.save();
+    return user;
+  } else {
+    throw new ErrorHandler("Department not match", 401);
+  }
+
+  // console.log("user updated data is ", user);
+  // return user;
+};
+const DepartmentDate = {
+  permission: "Team Lead",
+  departMentName: "sales",
+};
+// updateDepartmentHead("66614c435408c08b28c666e4", DepartmentDate).then(
+//   (resulte) => {
+//     console.log("resulte is ", resulte);
+//   }
+// );
 module.exports = {
   UserUpdateWithIdService,
   FindAllUserExceptLoggedIn,
@@ -270,4 +313,6 @@ module.exports = {
   updateAdminLeaveApplication,
   ApplyLeaveadmin,
   SearchbyApplicationNumber,
+  FindUserDepartMentWise,
+  updateDepartmentHead,
 };

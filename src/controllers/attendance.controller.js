@@ -27,7 +27,7 @@ const FindAttendaceByMonthName = catchAsync(async (req, res) => {
 });
 
 const OutTimeAttendance = catchAsync(async (req, res) => {
-  console.log("user id is", req.user);
+  // console.log("user id is", req.user);
   const attendance = await AttendanceService.OutTimeAttendance(req.user._id);
   ApiResponse(res, 200, "Data fetched successfully", attendance);
 });
@@ -37,7 +37,7 @@ const FindOutOfAllAttendanceByMonth = catchAsync(async (req, res) => {
   const attendance = await AttendanceService.FindOutTimeAttendaceByCurrentMonth(
     req.user._id
   );
-  console.log("attendacen is ", attendance);
+  // console.log("attendacen is ", attendance);
   ApiResponse(res, 200, "Date Fetched successfully", attendance);
 });
 
@@ -57,12 +57,12 @@ const FindOutTimeAttendanceByMonthByUseridController = catchAsync(
         req.body.month,
         req.body.numberOfDays
       );
-    console.log(
-      req.user._id,
-      req.body.year,
-      req.body.month,
-      req.body.numberOfDays
-    );
+    // console.log(
+    //   req.user._id,
+    //   req.body.year,
+    //   req.body.month,
+    //   req.body.numberOfDays
+    // );
     ApiResponse(res, 200, " data Fetched successfullt ", attendance);
   }
 );
@@ -74,7 +74,7 @@ const FindOutTimeAttendanceByMonthByAnyUserIDAdmin = catchAsync(
         req.body.year,
         req.body.month
       );
-    console.log("data is ", attendance);
+    // console.log("data is ", attendance);
     ApiResponse(res, 200, " data Fetched successfully ", attendance);
   }
 );
