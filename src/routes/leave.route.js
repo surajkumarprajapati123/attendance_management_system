@@ -22,11 +22,17 @@ router
 router.route("/search").get(Auth, LeaveController.SerchByApplicationNumber);
 router.route("/reject/:id").put(AdminAuth, LeaveController.RejectAppliction);
 router.route("/approve/:id").put(AdminAuth, LeaveController.ApprovedAppliction);
-router.route("/re-apply").put(Auth, LeaveController.ReApplicationApply);
-
+// router.route("/re-apply").put(Auth, LeaveController.ReApplicationApply);
+//
 router.route("/holidays").get(LeaveController.Holidyas);
-router.route("/types").get(LeaveController.findLeaveDays);
+router.route("/leave-types").get(LeaveController.findLeaveDays);
 router.route("/type").get(Auth, LeaveController.findLeaveWithId);
+router
+  .route("/type-Leave/:UserId")
+  .get(AdminAuth, LeaveController.findLeaveWithIdAdmin);
+router
+  .route("/types/update")
+  .put(AdminAuth, LeaveController.UpdateAllLeaveType);
 
 module.exports = router;
 
@@ -36,6 +42,142 @@ module.exports = router;
  * tags:
  *   name: Leave
  *   description: API endpoints for managing leave applications
+ */
+
+/**
+ * @swagger
+ * /leave/types/update:
+ *   put:
+ *     summary: Update leave types for a Admin
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               sickLeave:
+ *                 type: integer
+ *                 example: 5
+ *                 description: Number of sick leave days
+ *               casualLeave:
+ *                 type: integer
+ *                 example: 8
+ *                 description: Number of casual leave days
+ *               parentalLeave:
+ *                 type: integer
+ *                 example: 10
+ *                 description: Number of parental leave days
+ *               maternityLeave:
+ *                 type: integer
+ *                 example: 15
+ *                 description: Number of maternity leave days
+ *               paternityLeave:
+ *                 type: integer
+ *                 example: 15
+ *                 description: Number of paternity leave days
+ *               compensatoryLeave:
+ *                 type: integer
+ *                 example: 12
+ *                 description: Number of compensatory leave days
+ *               bereavementLeave:
+ *                 type: integer
+ *                 example: 10
+ *                 description: Number of bereavement leave days
+ *     responses:
+ *       '200':
+ *         description: Leave types updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Leave types updated successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     sickLeave:
+ *                       type: integer
+ *                       example: 5
+ *                       description: Updated number of sick leave days
+ *                     casualLeave:
+ *                       type: integer
+ *                       example: 8
+ *                       description: Updated number of casual leave days
+ *                     parentalLeave:
+ *                       type: integer
+ *                       example: 10
+ *                       description: Updated number of parental leave days
+ *                     maternityLeave:
+ *                       type: integer
+ *                       example: 15
+ *                       description: Updated number of maternity leave days
+ *                     paternityLeave:
+ *                       type: integer
+ *                       example: 15
+ *                       description: Updated number of paternity leave days
+ *                     compensatoryLeave:
+ *                       type: integer
+ *                       example: 12
+ *                       description: Updated number of compensatory leave days
+ *                     bereavementLeave:
+ *                       type: integer
+ *                       example: 10
+ *                       description: Updated number of bereavement leave days
+ *       '400':
+ *         description: Bad request - Invalid input
+ *       '401':
+ *         description: Unauthorized - Invalid or expired token
+ *       '500':
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /leave/type-Leave/{UserId}:
+ *   get:
+ *     summary: Get all leave types for a specific user
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: UserId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the user
+ *     responses:
+ *       200:
+ *         description: Data fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Data fetched successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       leaveType:
+ *                         type: string
+ *                         example: sickLeave
+ *                       days:
+ *                         type: integer
+ *                         example: 10
+ *       401:
+ *         description: Unauthorized, invalid, or expired token
+ *       500:
+ *         description: Internal server error
  */
 
 /**
@@ -346,42 +488,42 @@ module.exports = router;
  */
 
 // Reapply Leave Application
-/**
- * @swagger
- * /leave/re-apply:
- *   put:
- *     summary: Re-Apply Leave Application
- *     tags: [Leave]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               startDate:
- *                 type: string
- *                 format: date
- *                 description: Start date of the leave
- *               endDate:
- *                 type: string
- *                 format: date
- *                 description: End date of the leave
- *               reason:
- *                 type: string
- *                 description: Reason for the leave
- *     responses:
- *       200:
- *         description: Leave application approved successfully
- *       401:
- *         description: Unauthorized, invalid, or expired token
- *       404:
- *         description: Leave application not found
- *       500:
- *         description: Internal server error
- */
+// /**
+//  * @swagger
+//  * /leave/re-apply:
+//  *   put:
+//  *     summary: Re-Apply Leave Application
+//  *     tags: [Leave]
+//  *     security:
+//  *       - bearerAuth: []
+//  *     requestBody:
+//  *       required: true
+//  *       content:
+//  *         application/json:
+//  *           schema:
+//  *             type: object
+//  *             properties:
+//  *               startDate:
+//  *                 type: string
+//  *                 format: date
+//  *                 description: Start date of the leave
+//  *               endDate:
+//  *                 type: string
+//  *                 format: date
+//  *                 description: End date of the leave
+//  *               reason:
+//  *                 type: string
+//  *                 description: Reason for the leave
+//  *     responses:
+//  *       200:
+//  *         description: Leave application approved successfully
+//  *       401:
+//  *         description: Unauthorized, invalid, or expired token
+//  *       404:
+//  *         description: Leave application not found
+//  *       500:
+//  *         description: Internal server error
+//  */
 
 /**
  * @swagger
@@ -434,7 +576,7 @@ module.exports = router;
  * @swagger
  * /leave/type:
  *   get:
- *     summary: Get all leave types
+ *     summary: Get all leave types  with user Id
  *     tags: [Leave]
  *     security:
  *       - bearerAuth: []
@@ -468,9 +610,9 @@ module.exports = router;
 
 /**
  * @swagger
- * /leave/types:
+ * /leave/leave-types:
  *   get:
- *     summary: Get all leave types
+ *     summary: Get all leave types Leave,  Sick etc
  *     tags: [Leave]
  *     responses:
  *       200:

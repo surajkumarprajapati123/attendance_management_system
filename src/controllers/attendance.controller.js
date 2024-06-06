@@ -33,7 +33,7 @@ const OutTimeAttendance = catchAsync(async (req, res) => {
 });
 
 const FindOutOfAllAttendanceByMonth = catchAsync(async (req, res) => {
-  console.log("user id is", req.user._id);
+  // console.log("user id is", req.user._id);
   const attendance = await AttendanceService.FindOutTimeAttendaceByCurrentMonth(
     req.user._id
   );
@@ -69,12 +69,12 @@ const FindOutTimeAttendanceByMonthByUseridController = catchAsync(
 const FindOutTimeAttendanceByMonthByAnyUserIDAdmin = catchAsync(
   async (req, res) => {
     const attendance =
-      await AttendanceService.FindOutTimeAttendanceByMonthByUserid(
-        req.user.params,
+      await AttendanceService.FindOutTimeAttendanceByMonthByAdminOnly(
+        req.params.userId,
         req.body.year,
-        req.body.month,
-        req.body.numberOfDays
+        req.body.month
       );
+    console.log("data is ", attendance);
     ApiResponse(res, 200, " data Fetched successfully ", attendance);
   }
 );
@@ -93,9 +93,32 @@ const FindOutTimeAttendanceByMonthByUseridAdmin2 = catchAsync(
         req.body.month,
         req.body.numberOfDays
       );
-    ApiResponse(res, 200, " data Fetched successfullt ", attendance);
+    ApiResponse(res, 200, " data Fetched successfully ", attendance);
   }
 );
+
+const FindAllAbsentUuser = catchAsync(async (req, res) => {
+  const attendance = await AttendanceService.findALLAbsentUser();
+  ApiResponse(res, 200, " data Fetched successfully ", attendance);
+});
+const FindAttendanceByMonthByAdminOnly = catchAsync(async (req, res) => {
+  const attendance =
+    await AttendanceService.FindOutTimeAttendanceByMonthByAdminOnly2(
+      req.user._id,
+      req.body.startDate,
+      req.body.endDate
+    );
+  ApiResponse(res, 200, " data Fetched successfully ", attendance);
+});
+const FindAttendanceByMonthByAdminOnlyUserID = catchAsync(async (req, res) => {
+  const attendance =
+    await AttendanceService.FindOutTimeAttendanceByMonthByAdminOnly2(
+      req.params.UserId,
+      req.body.startDate,
+      req.body.endDate
+    );
+  ApiResponse(res, 200, " data Fetched successfully ", attendance);
+});
 
 module.exports = {
   TakingAttendance,
@@ -108,4 +131,7 @@ module.exports = {
   FindOutTimeAttendanceByMonthByUseridController,
   FindOutTimeAttendanceByMonthByAnyUserIDAdmin,
   FindAllPresentUser,
+  FindAllAbsentUuser,
+  FindAttendanceByMonthByAdminOnly,
+  FindAttendanceByMonthByAdminOnlyUserID,
 };

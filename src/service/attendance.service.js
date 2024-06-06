@@ -262,9 +262,10 @@ const findAttendanceByMonthName = async (MonthName) => {
 };
 
 const findAllPresentUser = async () => {
-  const allPresentUeser = await AttendanceModel.aggregate([
+  const allPresentUsers = await AttendanceModel.aggregate([
     {
       $match: {
+        // Match documents where the date field exists
         status: "present",
       },
     },
@@ -277,38 +278,131 @@ const findAllPresentUser = async () => {
       },
     },
     { $unwind: "$user" },
-
     {
       $project: {
         _id: 0,
+        Intime: {
+          $dateToString: { format: "%Y-%m-%d %H:%M", date: "$Intime" },
+        }, // Include the Intime field with formatted date and time
+        id: "$user._id",
         email: "$user.email",
         name: "$user.name",
+      },
+    },
+
+    {
+      $group: {
+        _id: null,
+        users: {
+          $push: {
+            name: "$name",
+            email: "$email",
+            Intime: "$Intime",
+            Id: "$id",
+          },
+        },
+        TotalUserPresent: { $sum: 1 },
+      },
+    },
+  ]);
+  // console.log("allPresentUsers[0].users", allPresentUsers[0].users);
+
+  const formattedOutput = allPresentUsers[0].users.map((user) => ({
+    UserID: user.Id.toString(),
+    Username: user.name,
+    UserEmail: user.email,
+    AttendaceDate: user.Intime.split(" ")[0],
+    AttendaceTime: user.Intime.split(" ")[1],
+  }));
+
+  const totalAttendaceUser = allPresentUsers[0].TotalUserPresent;
+
+  const output = [
+    ...formattedOutput,
+    { TotalAttendaceUser: totalAttendaceUser },
+  ];
+
+  console.log("Output object is ", output);
+  return output;
+};
+
+// 😀😀
+// findAllPresentUser().then((result) => {
+//   console.log("Resute is ", result);
+// });
+const findALLAbsentUser = async () => {
+  const absentAllUser = await AttendanceModel.aggregate([
+    {
+      $match: {
+        status: "absent",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userid",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    {
+      $unwind: "$user",
+    },
+    {
+      $project: {
+        _id: 0,
+        Outtime: {
+          $dateToString: { format: "%Y-%m-%d %H:%M", date: "$Outtime" },
+        },
+        id: "$user._id",
+        name: "$user.name",
+        email: "$user.email",
       },
     },
     {
       $group: {
         _id: null,
-        users: { $push: { name: "$name", email: "$email" } },
-        TotalUserPresent: { $sum: 1 },
+        users: {
+          $push: {
+            name: "$name",
+            email: "$email",
+            Outtime: "$Outtime",
+            id: "$id",
+          },
+        },
+        TotalAbsentUser: { $sum: 1 },
       },
     },
     {
       $project: {
         _id: 0,
         users: 1,
-        TotalUserPresent: 1,
+        TotalAbsentUser: 1,
       },
     },
   ]);
-  let obj = {
-    UserName: allPresentUeser[0].users.map((user) => user.name),
-    UserEmail: allPresentUeser[0].users.map((user) => user.email),
-    TotalUser: allPresentUeser.map((user) => user.TotalUserPresent),
-  };
-  return obj;
+
+  // console.log("data1 ", absentAllUser);
+  // console.log("data2 ", absentAllUser[0]);
+  // console.log("data3 ", absentAllUser[0].users);
+  let outputformat = absentAllUser[0].users.map((user) => ({
+    UserId: user.id.toString(),
+    UserName: user.name,
+    UserEmail: user.email,
+    Absent_Date: user.Outtime && user.Outtime.split(" ")[0], // Check if Outtime is not null
+    Absent_Time: user.Outtime && user.Outtime.split(" ")[1], // Check if Outtime is not null
+  }));
+
+  const TotalAbsentUser = absentAllUser[0].TotalAbsentUser;
+  const output = [...outputformat, { TotalAbsentUser: TotalAbsentUser }];
+
+  // console.log("Final output is ", output);
+  return output;
 };
 
-// findAllPresentUser();
+// findALLAbsentUser().then((result) => {
+//   console.log("Resute is ", result);
+// });
 
 const OutTimeAttendance = async (userid) => {
   try {
@@ -316,6 +410,7 @@ const OutTimeAttendance = async (userid) => {
     if (!attendance) {
       throw new ErrorHandler("User is not found", 401);
     }
+    // console.log("Total working hours ", process.env.WORKING_HOURS);
 
     const userIntime = attendance.Intime;
     const convertIntime = new Date(userIntime);
@@ -340,12 +435,13 @@ const OutTimeAttendance = async (userid) => {
 
     const diffMilliseconds = currentTiem - convertIntime;
     const diffMinutes = Math.abs(Math.floor(diffMilliseconds / (1000 * 60)));
+    const diffHours = Math.floor(diffMinutes / 60);
 
     console.log("Difference in minutes:", diffMinutes);
     console.log("Database time:", convertIntime.toLocaleTimeString());
     console.log("Present time:", currentTiem.toLocaleTimeString());
-
-    if (diffMinutes > 5) {
+    // console.log("Total working hours ", process.env.WORKING_HOURS);
+    if (diffHours > process.env.WORKING_HOURS) {
       attendance.status = "present";
       attendance.Outtime = undefined;
       await attendance.save();
@@ -370,7 +466,7 @@ const OutTimeAttendance = async (userid) => {
   }
 };
 
-// OutTimeAttendance("66482adfe6e69f140a372dc6");
+OutTimeAttendance("66482adfe6e69f140a372dc6");
 
 const FindOutTimeAttendaceByCurrentMonth = async (userid) => {
   if (!mongoose.Types.ObjectId.isValid(userid)) {
@@ -450,23 +546,60 @@ const FindOutTimeAttendaceByCurrentMonth = async (userid) => {
     11: "November",
     12: "December",
   };
+  // console.log("Attendace month is ", attendanceByMonth);
+  // attendanceByMonth.forEach((data) => {
+  //   const { year, month, monthName, absentByDate, totatAbsent, names, email } =
+  //     data;
+  //   const monthKey = `${month}-${monthNames[monthName]}-${year}`; // Include year in the key
 
-  attendanceByMonth.forEach((data) => {
-    const { year, month, monthName, absentByDate, totatAbsent, names, email } =
+  //   attendanceObj[monthKey] = {
+  //     absentByDate,
+  //     totatAbsent,
+  //     MonthName: monthNames[monthName],
+  //     UserNames: names[0].map((data) => data.name),
+  //     UserEmail: email[0].map((data) => data.email), // Filter out null or undefined names
+  //   };
+  // });
+  function getMonthName(monthNumber) {
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    return months[monthNumber - 1]; // Adjust for zero-based indexing
+  }
+  const transformedData = attendanceByMonth.map((data) => {
+    const { absentByDate, totatAbsent, names, email, year, month, monthName } =
       data;
-    const monthKey = `${month}-${monthNames[monthName]}-${year}`; // Include year in the key
+    return {
+      AbsentDate: absentByDate[0],
 
-    attendanceObj[monthKey] = {
-      absentByDate,
-      totatAbsent,
-      MonthName: monthNames[monthName],
-      UserNames: names.filter((name) => name),
-      UserEmail: email.filter((email) => email), // Filter out null or undefined names
+      UserName: names[0],
+      UserEmail: email[0],
+      Year: year,
+      Month: month,
+      MonthName: getMonthName(monthName),
     };
   });
-  console.log("resulte is attendane by month is", attendanceObj);
 
-  return attendanceObj;
+  const totalAbsent = attendanceByMonth.reduce(
+    (acc, curr) => acc + curr.totatAbsent,
+    0
+  );
+  const ouput = [...transformedData, { TotalAbsent: totalAbsent }];
+
+  console.log("resulte is attendane by month is", ouput);
+
+  return ouput;
 };
 
 // FindOutTimeAttendaceByCurrentMonth("665aaf32f612041756a2800a").then(
@@ -850,6 +983,225 @@ const findAdminAttendanceByMonthName = async (MonthName) => {
 
   return { totalPresentUsers, attendance: attendanceByMonthName };
 };
+const FindOutTimeAttendanceByMonthByAdminOnly = async (UserID, year, month) => {
+  const attendanceByMonth = await AttendanceModel.aggregate([
+    {
+      $match: {
+        userid: new mongoose.Types.ObjectId(UserID),
+      },
+    },
+    {
+      $addFields: {
+        attendanceYear: { $year: "$createdAt" },
+        attendanceMonth: { $month: "$createdAt" },
+        attendanceDate: {
+          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+        },
+      },
+    },
+    {
+      $match: {
+        attendanceYear: year,
+        attendanceMonth: month,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userid",
+        foreignField: "_id",
+        as: "userDetails",
+      },
+    },
+    {
+      $unwind: "$userDetails",
+    },
+    {
+      $group: {
+        _id: {
+          day: { $dayOfMonth: "$createdAt" },
+          date: "$attendanceDate",
+          status: "$status",
+        },
+        count: { $sum: 1 },
+        name: { $first: "$userDetails.name" },
+        email: { $first: "$userDetails.email" },
+      },
+    },
+    {
+      $group: {
+        _id: "$_id.day",
+        date: { $first: "$_id.date" },
+        statuses: {
+          $push: {
+            status: "$_id.status",
+            count: "$count",
+          },
+        },
+        users: {
+          $push: {
+            name: "$name",
+            email: "$email",
+            status: "$_id.status",
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        day: "$_id",
+        date: 1,
+        statuses: 1,
+        users: 1,
+      },
+    },
+    {
+      $sort: { day: 1 },
+    },
+  ]);
+
+  const attendanceObj = {};
+  attendanceByMonth.forEach((data) => {
+    const { day, date, statuses, users } = data;
+    const presentCount =
+      statuses.find((s) => s.status === "present")?.count || 0;
+    const absentCount = statuses.find((s) => s.status === "absent")?.count || 0;
+
+    attendanceObj[day] = {
+      date: date,
+      present: presentCount,
+      absent: absentCount,
+      users: users.map((user) => ({
+        name: user.name,
+        email: user.email,
+        status: user.status,
+      })),
+    };
+  });
+  return attendanceObj;
+};
+const FindOutTimeAttendanceByMonthByAdminOnly2 = async (
+  UserID,
+  startDate,
+  endDate
+) => {
+  try {
+    const attendanceByMonth = await AttendanceModel.aggregate([
+      {
+        $match: {
+          userid: new mongoose.Types.ObjectId(UserID),
+          createdAt: {
+            $gte: new Date(startDate), // Match documents with createdAt >= startDate
+            $lte: new Date(endDate), // Match documents with createdAt <= endDate
+          },
+        },
+      },
+      {
+        $addFields: {
+          attendanceYear: { $year: "$createdAt" },
+          attendanceMonth: { $month: "$createdAt" },
+          attendanceDate: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userid",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      {
+        $unwind: "$userDetails",
+      },
+      {
+        $group: {
+          _id: {
+            day: { $dayOfMonth: "$createdAt" },
+            date: "$attendanceDate",
+            status: "$status",
+          },
+          count: { $sum: 1 },
+          name: { $first: "$userDetails.name" },
+          email: { $first: "$userDetails.email" },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.day",
+          date: { $first: "$_id.date" },
+          statuses: {
+            $push: {
+              status: "$_id.status",
+              count: "$count",
+            },
+          },
+          users: {
+            $push: {
+              name: "$name",
+              email: "$email",
+              status: "$_id.status",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          day: "$_id",
+          date: 1,
+          statuses: 1,
+          users: 1,
+        },
+      },
+      {
+        $sort: { day: 1 },
+      },
+    ]);
+
+    const attendanceObj = {};
+    attendanceByMonth.forEach((data) => {
+      const { day, date, statuses, users } = data;
+      const presentCount =
+        statuses.find((s) => s.status === "present")?.count || 0;
+      const absentCount =
+        statuses.find((s) => s.status === "absent")?.count || 0;
+
+      attendanceObj[day] = {
+        date: date,
+        present: presentCount,
+        absent: absentCount,
+        users: users.map((user) => ({
+          name: user.name,
+          email: user.email,
+          status: user.status,
+        })),
+      };
+    });
+    console.log("data is ", attendanceObj);
+    return attendanceObj;
+  } catch (error) {
+    console.error("Error fetching attendance:", error);
+    throw error;
+  }
+};
+
+// Example usage:
+// const UserID = "yourUserID";
+// const startDate = "2024-05-10";
+// const endDate = "2024-06-20";
+
+// FindOutTimeAttendanceByMonthByAdminOnly2(startDate, endDate)
+//   .then((attendance) => {
+//     console.log("Attendance data:", attendance);
+//   })
+//   .catch((error) => {
+//     console.error("Error:", error);
+//   });
+
 module.exports = {
   TakeAttendance,
   FindAttendaceByMonth,
@@ -861,4 +1213,7 @@ module.exports = {
   TakingAttendanceMannual,
   FindOutTimeAttendaceByMonthName,
   findAllPresentUser,
+  findALLAbsentUser,
+  FindOutTimeAttendanceByMonthByAdminOnly,
+  FindOutTimeAttendanceByMonthByAdminOnly2,
 };

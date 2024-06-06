@@ -12,6 +12,7 @@ const bcrypt = require("bcrypt");
 const { GenerateAccesssTokenandRefreshToken } = require("./token.service");
 const UploadfileOnCloudinary = require("../utils/cloudinary");
 const deleteFileFromCloudinary = require("../utils/DeleteUserAvatar");
+const randomString = require("randomstring");
 
 const RegisterUser = async (req, userdata) => {
   let user;
@@ -112,11 +113,18 @@ const Login = async (userData) => {
 
 const findAlluser = async () => {
   const user = await UserModel.find({});
+  // const dataa = randomString.generate({
+  //   length: 100,
+  //   charset: ["hex", 9],
+  // });
+  // console.log(dataa);
   if (!user) {
     throw new ErrorHandler("User name is not found", 401);
   }
+  // console.log("all user is ", user);
   return user;
 };
+// findAlluser();
 
 const ForgatePasswordService = async (email) => {
   if (!email) {
@@ -126,49 +134,100 @@ const ForgatePasswordService = async (email) => {
   if (!pattern.test(email)) {
     throw new ErrorHandler("Invalid Email", 401);
   }
-  let data;
-  data = await UserModel.findOne({ email });
-  if (!data) {
+
+  let user = await UserModel.findOne({ email });
+  if (!user) {
     throw new ErrorHandler("User not found", 401);
   }
-  const GenerateToken = jwt.sign({ _id: data._id }, process.env.SECRET_KEY, {
-    expiresIn: "1h",
-  });
-  console.log("GenerateToken", GenerateToken);
-  data = await SendOnlyEmailForgate(email, GenerateToken);
 
-  return data;
+  // Check if user already has a reset token
+  let tokenData = await TokenModel.findOne({
+    user: user._id,
+    tokenType: "Reset Token",
+  });
+
+  // Generate a new token
+  const generateTokenRandom = randomString.generate({
+    length: 100,
+    charset: ["hex", 9],
+  });
+  const resetTokenExpiration = Date.now() + 10 * 60 * 1000;
+
+  if (tokenData) {
+    // If user already has a token, update it
+    tokenData.token = generateTokenRandom;
+    tokenData.expires = resetTokenExpiration;
+    tokenData.blacklisted = false;
+    await tokenData.save();
+  } else {
+    // If user does not have a token, create a new one
+    await TokenModel.create({
+      token: generateTokenRandom,
+      user: user._id,
+      expires: resetTokenExpiration,
+      tokenType: "Reset Token",
+    });
+  }
+
+  // console.log("GenerateToken", generateTokenRandom);
+
+  // Send email with the reset token
+  await SendOnlyEmailForgate(email, generateTokenRandom);
+
+  return { message: "Reset token generated and sent successfully" };
 };
+
+// ForgatePasswordService("surajkumar@yopmail.com");
 
 const resetPassword = async (passwordData, token) => {
   try {
+    // Check if token is provided
     if (!token) {
-      throw new ErrorHandler("Please Provide token", 401);
+      throw new ErrorHandler("Please provide a token", 401);
     }
+
+    // Extract password from passwordData
     const { password } = passwordData;
     if (!password) {
       throw new ErrorHandler("Enter the Password", 401);
     }
-    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-    console.log("Reset password token", decodedToken);
+
+    // Find token in database
+    const decodedToken = await TokenModel.findOne({ token });
     if (!decodedToken) {
       throw new ErrorHandler("Token is invalid", 401);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10); // Asynchronous hashing
-    // console.log("Hashed password:", hashedPassword);
+    // Log current time and decoded token time
+    console.log("Current time: ", new Date());
+    console.log("Token expiry time: ", new Date(decodedToken.expires));
 
-    const userId = decodedToken._id;
+    // Check if token has expired
+    if (Date.now() > decodedToken.expires) {
+      decodedToken.blacklisted = true;
+      await decodedToken.save();
+      throw new ErrorHandler(
+        "Token has expired, please request a new one",
+        401
+      );
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Update user's password
+    const userId = decodedToken.user;
     const user = await UserModel.findByIdAndUpdate(userId, {
       password: hashedPassword,
     });
 
+    // Check if user exists
     if (!user) {
       throw new ErrorHandler("User not found", 404);
     }
 
-    // console.log("User:", user);
-    return user; // Return success message
+    // Return the updated user
+    return user;
   } catch (error) {
     // Handle errors
     if (error instanceof jwt.JsonWebTokenError) {
@@ -178,6 +237,10 @@ const resetPassword = async (passwordData, token) => {
   }
 };
 
+// const passwordData = {
+//   password: "Surajkuamr",
+// };
+// resetPassword(passwordData, "r5O0cavvEDLAYglkx24UxdObyV6YRY0W");
 const getProfile = async (userid) => {
   const user = await UserModel.findById({ _id: userid }).select(
     "-password -_id -__v"

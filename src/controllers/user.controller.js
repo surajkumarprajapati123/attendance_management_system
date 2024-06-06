@@ -84,7 +84,7 @@ const ResetPassword = catchAsync(async (req, res) => {
   let user;
   user = await UserService.resetPassword(req.body, req.params.token);
   user.password = undefined;
-  ApiResponse(res, 200, "password is change successfully", user);
+  ApiResponse(res, 200, "password is change successfully", null);
 });
 
 const GetProfile = catchAsync(async (req, res) => {
