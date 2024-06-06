@@ -16,6 +16,10 @@ const tokenSchema = mongoose.Schema(
       type: Date,
       required: true,
     },
+    tokenType: {
+      type: String,
+      default: "login",
+    },
     blacklisted: {
       type: Boolean,
       default: false,

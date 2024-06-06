@@ -27,16 +27,272 @@ router
   .route("/absent-month/:monthName")
   .get(AdminAuth, AttendanceController.FindOutOfAllAttendanceByMonthName);
 
-router.route("/present").get(AttendanceController.FindAllPresentUser);
+router
+  .route("/present")
+  .get(AdminAuth, AttendanceController.FindAllPresentUser);
+router.route("/absent").get(AdminAuth, AttendanceController.FindAllAbsentUuser);
+
+router
+  .route("/absent-present-user/:userId")
+  .post(
+    AdminAuth,
+    AttendanceController.FindOutTimeAttendanceByMonthByAnyUserIDAdmin
+  );
+router
+  .route("/absent-present-range")
+  .post(Auth, AttendanceController.FindAttendanceByMonthByAdminOnly);
+router
+  .route("/absent-present-range-admin/:UserId")
+  .post(AdminAuth, AttendanceController.FindAttendanceByMonthByAdminOnlyUserID);
 
 module.exports = router;
+
+/**
+ * @swagger
+ * /attendance/absent-present-range-admin/{UserId}:
+ *   post:
+ *     summary: Get attendance data for a user within a specified date range (Admin)
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the user
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 description: The start date of the date range (YYYY-MM-DD)
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 description: The end date of the date range (YYYY-MM-DD)
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 attendance:
+ *                   type: array
+ *                   description: Attendance data for the user within the specified date range
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       date:
+ *                         type: string
+ *                         format: date
+ *                       present:
+ *                         type: integer
+ *                       absent:
+ *                         type: integer
+ *                       users:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             name:
+ *                               type: string
+ *                             email:
+ *                               type: string
+ *                             status:
+ *                               type: string
+ *               example:
+ *                 attendance:
+ *                   - date: "2024-06-02"
+ *                     present: 3
+ *                     absent: 1
+ *                     users:
+ *                       - name: "John Doe"
+ *                         email: "john@example.com"
+ *                         status: "present"
+ *                       - name: "Jane Smith"
+ *                         email: "jane@example.com"
+ *                         status: "absent"
+ *       '400':
+ *         description: Bad request
+ *       '401':
+ *         description: Unauthorized - Admin access only
+ *       '404':
+ *         description: Data not found
+ *       '500':
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /attendance/absent-present-range:
+ *   post:
+ *     summary: Get attendance data for a user within a specified date range with User id it self
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               startDate:
+ *                 type: string
+ *                 format: date
+ *                 description: The start date of the date range (YYYY-MM-DD)
+ *               endDate:
+ *                 type: string
+ *                 format: date
+ *                 description: The end date of the date range (YYYY-MM-DD)
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 attendance:
+ *                   type: object
+ *                   description: Attendance data for the user within the specified date range
+ *               example:
+ *                 attendance:
+ *                   1:
+ *                     date: "2024-06-02"
+ *                     present: 3
+ *                     absent: 1
+ *                     users:
+ *                       - name: "John Doe"
+ *                         email: "john@example.com"
+ *                         status: "present"
+ *                       - name: "Jane Smith"
+ *                         email: "jane@example.com"
+ *                         status: "absent"
+ *       '400':
+ *         description: Bad request
+ *       '401':
+ *         description: Unauthorized - Admin access only
+ *       '404':
+ *         description: Data not found
+ *       '500':
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /attendance/absent-present-user/{userId}:
+ *   post:
+ *     summary: Get absent user's attendance by user ID for a specific month (Admin)
+ *     tags: [Admin]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               year:
+ *                 type: integer
+ *                 description: Numeric representation of the year
+ *               month:
+ *                 type: integer
+ *                 description: Numeric representation of the month (1 for January, 2 for February, etc.)
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 userId:
+ *                   type: string
+ *                   description: ID of the user
+ *                 userName:
+ *                   type: string
+ *                   description: Name of the user
+ *                 userEmail:
+ *                   type: string
+ *                   format: email
+ *                   description: Email of the user
+ *                 absentDate:
+ *                   type: string
+ *                   format: date
+ *                   description: Date of absence
+ *                 absentTime:
+ *                   type: string
+ *                   format: time
+ *                   description: Time of absence
+ *       '400':
+ *         description: Bad request
+ *       '404':
+ *         description: User not found
+ *       '500':
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /attendance/absent:
+ *   get:
+ *     summary: Get all absent users (Admin Only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: A list of absent users and their details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 UserName:
+ *                   type: array
+ *                   description: List of user names
+ *                   items:
+ *                     type: string
+ *                 UserEmail:
+ *                   type: array
+ *                   description: List of user emails
+ *                   items:
+ *                     type: string
+ *                 TotalAbsentUser:
+ *                   type: integer
+ *                   description: Total count of absent users
+ *             example:
+ *               UserName: ["John Doe", "Jane Smith"]
+ *               UserEmail: ["john@example.com", "jane@example.com"]
+ *               TotalAbsentUser: 2
+ *       '401':
+ *         description: Unauthorized - Admin access only
+ *       '500':
+ *         description: Internal server error
+ */
 
 /**
  * @swagger
  * /attendance/present:
  *   get:
  *     summary: Get all present users Only Admin Can Access
- *     tags: [Attendance]
+ *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -169,7 +425,7 @@ module.exports = router;
  * @swagger
  * /attendance/absent-month:
  *   get:
- *     summary: Find out of all attendance by month
+ *     summary: Find out of all attendance by month Current Month User Find It Self
  *     tags: [Attendance]
  *     security:
  *       - bearerAuth: []

@@ -20,7 +20,7 @@ const { UserUpdateWithIdService } = require("./admin.service");
 const LeaveType = async () => {
   const leave = await LeaveTypeModel.findById({
     _id: "66595b843911fa076762c6b0",
-  }).select("-_id -__v");
+  }).select("-_id -__v -createdAt -updatedAt");
   console.log("total leave types is available", leave);
   return leave;
 };
@@ -165,7 +165,7 @@ const ApplyLeave = async (userId, userData) => {
     username.slice(0, 3).toUpperCase() + "00" + generate;
   console.log("useris ", finduser);
   if (finduser) {
-    throw new ErrorHandler("Already user exits ", 401);
+    throw new ErrorHandler("Already user apply leave ", 401);
   }
   const { employeeId, startDate, endDate, reason, leaveType } = userData;
 
@@ -301,19 +301,59 @@ const leaveApplicationData = {
 // ApplyLeave("66497dca7ee0abf5d8160dd1", leaveApplicationData);
 // 😁😁😁😁😁
 const findLeaveTypeusingId = async (userID) => {
-  if (!userId) {
-    throw new ErrorHandler("invalid token", 401);
+  try {
+    if (!userID) {
+      throw new ErrorHandler("invalid User", 401);
+    }
+    const leave = await LeaveTypeModel.findOne({ user: userID }).select(
+      "-_id -__v -user -createdAt -updatedAt"
+    );
+    if (!leave) {
+      throw new ErrorHandler("Leave not found", 401);
+    }
+    // console.log("updated leave type is ", leave);
+    return leave;
+  } catch (error) {
+    console.log("Error is ", error);
   }
-  const leave = await LeaveTypeModel.findOne({ user: userID }).select(
-    "-_id -__v -user"
-  );
-  if (!leave) {
-    throw new ErrorHandler("Leave not found", 401);
-  }
-  console.log("updated leave type is ", leave);
-  return leave;
 };
-// findLeaveTypeusingId("66497dca7ee0abf5d8160dd1");
+// findLeaveTypeusingId("665aaf32f612041756a2800a");
+const updateLeaveTypes = async (userID, updateObject) => {
+  try {
+    if (!userID) {
+      throw new Error("Invalid User");
+    }
+
+    // Construct the update object with the leave types
+    // const updateObject = { $set: leaveTypes };
+
+    // Update the leave types for the specified user
+
+    const updatedLeave = await LeaveTypeModel.findByIdAndUpdate(
+      { _id: userID },
+      updateObject,
+      {
+        new: true,
+        fields: { _id: 0, __v: 0, user: 0, createdAt: 0, updatedAt: 0 },
+      }
+    );
+    // const updatedLeave = await LeaveTypeModel.findOneAndUpdate(
+    //   { user: userID },
+    //   updateObject,
+    //   { new: true, fields: { _id: 0, __v: 0, user: 0 } } // Return the updated document without _id, __v, and user fields
+    // );
+
+    if (!updatedLeave) {
+      throw new Error("Leave not found");
+    }
+
+    console.log("Updated leave types:", updatedLeave);
+    return updatedLeave;
+  } catch (error) {
+    console.log("Error:", error.message);
+    throw error; // Re-throw the error to propagate it to the caller
+  }
+};
 
 const updateApplicationByid = async (leaveId, updateData) => {
   const { status, reason, startDate, endDate, leaveType } = updateData;
@@ -824,10 +864,10 @@ const SomedataReason = {
 //   }
 // };
 
-const ReapplyLeaveApplication = async (userid, userdata) => {
+const ReapplyLeaveApplication = async (userId, userData) => {
   try {
-    const { startDate, endDate, reason } = userdata;
-    console.log("user is id ", userid);
+    const { startDate, endDate, reason } = userData;
+    console.log("User ID is:", userId);
 
     // Check if all required fields are provided
     if (!startDate || !endDate || !reason) {
@@ -835,25 +875,21 @@ const ReapplyLeaveApplication = async (userid, userdata) => {
     }
 
     // Check if dates are valid
-    if (!isValidDates(startDate, endDate)) {
-      throw new ErrorHandler(
-        "End date must be at least one day after start date. Date format: DD/MM/YYYY",
-        400
-      );
-    }
 
     // Find leave data for the user
-    const data = await LeaveModel.findOne({ employeeId: userid });
-    console.log("reapply dataus ", data);
+    const data = await LeaveModel.findOne({ employeeId: userId });
+    console.log("Reapply data:", data);
 
     if (!data) {
       throw new ErrorHandler("No previous leave application found", 404);
     }
+    const totalleave = await calculateDays(startDate, endDate);
 
-    // Check if user can reapply based on block status
-    if (data.block === true && data.status == "rejected") {
-      // Execute time management function
-      await TimeManagementForApplication(userid);
+    // Check if user can reapply based on status
+    if (data.status === "pending") {
+      throw new ErrorHandler("Waiting for response from admin side", 403);
+    } else if (data.status === "approved") {
+      throw new ErrorHandler("Your application is already approved", 403);
     } else {
       // Update leave data with new details
       data.startDate = startDate;
@@ -861,6 +897,7 @@ const ReapplyLeaveApplication = async (userid, userdata) => {
       data.reason = reason;
       data.status = "pending"; // Assuming reapplications are pending by default
       data.DateAndtime = Date.now();
+      data.days = totalleave.totalDays;
 
       // Save the updated leave data
       await data.save();
@@ -873,13 +910,13 @@ const ReapplyLeaveApplication = async (userid, userdata) => {
   }
 };
 
-// Example usage
-const userId = "user123"; // Replace with actual user ID
-const reapplyData = {
-  startDate: new Date(),
-  endDate: new Date(),
-  reason: "Vacation",
-};
+// // Example usage
+// const userId = "user123"; // Replace with actual user ID
+// const reapplyData = {
+//   startDate: new Date(),
+//   endDate: new Date(),
+//   reason: "Vacation",
+// };
 
 // try {
 //   // Reapply for leave
@@ -915,6 +952,7 @@ module.exports = {
   HolidaysDays,
   LeaveType,
   findLeaveTypeusingId,
+  updateLeaveTypes,
   // ReApplyApplication,
   // calculateDateDifference,
 };

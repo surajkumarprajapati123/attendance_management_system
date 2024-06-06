@@ -5,3 +5,4 @@ module.exports.LeaveModel = require("./leaveApplication.model");
 module.exports.AttendanceModel = require("./attendance.model");
 module.exports.UserNameModel = require("./username.model");
 module.exports.LeaveTypeModel = require("./leaveType.modle");
+module.exports.DepartmentModel = require("./department.model");

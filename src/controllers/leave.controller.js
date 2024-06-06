@@ -76,6 +76,20 @@ const findLeaveWithId = catchAsync(async (req, res) => {
   const data = await LeaveService.findLeaveTypeusingId(req.user._id);
   ApiResponse(res, 200, "Date Fetched successfully", data);
 });
+const findLeaveWithIdAdmin = catchAsync(async (req, res) => {
+  const data = await LeaveService.findLeaveTypeusingId(req.query.UserId);
+  console.log("datais ", data);
+  ApiResponse(res, 200, "Date Fetched successfully", data);
+});
+
+const UpdateAllLeaveType = catchAsync(async (req, res) => {
+  const data = await LeaveService.updateLeaveTypes(
+    "66595b843911fa076762c6b0",
+    req.body
+  );
+  console.log("data s ", data);
+  ApiResponse(res, 200, "Date Fetched successfully", data);
+});
 
 module.exports = {
   ApplyLeave,
@@ -91,4 +105,6 @@ module.exports = {
   Holidyas,
   findLeaveDays,
   findLeaveWithId,
+  findLeaveWithIdAdmin,
+  UpdateAllLeaveType,
 };
