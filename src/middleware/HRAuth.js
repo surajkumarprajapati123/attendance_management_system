@@ -31,7 +31,8 @@ const AdminAuth = async (req, res, next) => {
 
     // console.log("user", user.role);
     // Check if the user is an admin
-    if (user.role !== "hr") {
+    // console.log("middleware user is ", user);
+    if (user.role !== "hr" && user.role !== "admin") {
       return res
         .status(403)
         .json({ message: "Unauthorized access, hr privileges required" });

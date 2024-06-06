@@ -1,6 +1,7 @@
 const express = require("express");
 const { UserController } = require("../controllers");
 const Auth = require("../middleware/auth");
+const HRAuth = require("../middleware/HRAuth");
 const validate = require("../middleware/validate");
 const { UserValidation } = require("../validation");
 const upload = require("../middleware/multer");
@@ -23,6 +24,8 @@ router
   .route("/avatar-update")
   .patch(Auth, upload.single("avatar"), UserController.UpdateAvater);
 
+router.route("/department").post(HRAuth, UserController.FindAllDepartmentUser);
+
 router.get("/test", Auth, (req, res) => {
   console.log(req.user);
   res.send("testin routng is working");
@@ -30,6 +33,40 @@ router.get("/test", Auth, (req, res) => {
 
 module.exports = router;
 // Register Schema
+
+/**
+ * @swagger
+ * /user/department:
+ *   post:
+ *     summary: Find all users by department only access for Department HR
+ *     description: Retrieves all users belonging to a specific department.
+ *     tags: [Department]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               departmentName:
+ *                 type: string
+ *                 description: The name of the department to search users for.
+ *     responses:
+ *       200:
+ *         description: Success. Returns users in the specified department.
+ *         schema:
+ *           type: array
+ *           items:
+ *             $ref: '#/definitions/User'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 
 /**
  * @swagger
@@ -42,6 +79,7 @@ module.exports = router;
  *         - username
  *         - email
  *         - password
+ *         - departmentName
  *       properties:
  *         name:
  *           type: string
@@ -57,6 +95,9 @@ module.exports = router;
  *           type: string
  *           format: password
  *           description: The user's chosen password
+ *         departmentName:
+ *           type: string
+ *           description: The name of the department the user belongs to
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -113,6 +154,7 @@ module.exports = router;
  *               - password
  *               - username
  *               - avatar
+ *               - departmentName  # Add departmentName to the required fields
  *             properties:
  *               name:
  *                 type: string
@@ -131,6 +173,9 @@ module.exports = router;
  *                 type: string
  *                 format: binary   # Indicate that this field represents binary data (file)
  *                 description: Choose an image file for your avatar
+ *               departmentName:
+ *                 type: string
+ *                 description: The name of the department the user belongs to
  *     responses:
  *       "201":
  *         description: Created

@@ -203,7 +203,7 @@ const Logoutuser = async (userid) => {
     }
   );
   const useridmodel = await UserModel.findById(userid);
-  console.log("user model is ", useridmodel);
+  // console.log("user model is ", useridmodel);
   if (useridmodel.role !== "hr") {
     throw new ErrorHandler("Your are not authorized", 401);
   }

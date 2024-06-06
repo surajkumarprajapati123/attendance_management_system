@@ -160,7 +160,17 @@ const LogoutUser = catchAsync(async (req, res) => {
       message: "User Logout successsfully",
     });
 });
+
+const FindAllDepartmentUser = catchAsync(async (req, res) => {
+  const department = await UserService.findDepartmentAllUser(
+    req.user._id,
+    req.body
+  );
+  ApiResponse(res, 200, "User date fetched successfully", department);
+});
+
 module.exports = {
+  FindAllDepartmentUser,
   RegisterUser,
   LoginUser,
   FindallUser,

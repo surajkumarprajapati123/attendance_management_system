@@ -35,7 +35,7 @@ const resetPassword = catchAsync(async (req, res) => {
 });
 
 const LogoutUser = catchAsync(async (req, res) => {
-  console.log(req.user);
+  // console.log(req.user);
   const tokenId = await AdminService.useridfindbytoken(req.user._id);
   await AdminService.Logoutuser(tokenId);
 
@@ -79,6 +79,31 @@ const SerchByApplicationNumber = catchAsync(async (req, res) => {
   ApiResponse(res, 200, "All data  is showing for this applicaiton ", leave);
 });
 
+const FindAllStudentUsingDepartment = catchAsync(async (req, res) => {
+  const department = await AdminService.FindUserDepartMentWise(
+    req.params.departmentName
+  );
+  ApiResponse(
+    res,
+    200,
+    "All data  is showing for this Department ",
+    department
+  );
+});
+
+const ChangeDepartmentUsingUserId = catchAsync(async (req, res) => {
+  const department = await AdminService.updateDepartmentHead(
+    req.params.UserId,
+    req.body
+  );
+  ApiResponse(
+    res,
+    200,
+    "All data  is showing for this Department ",
+    department
+  );
+});
+
 module.exports = {
   UpdateUserWithID,
   FindAllUserByAdmin,
@@ -90,4 +115,6 @@ module.exports = {
   updateAdminLeaveApplication,
   ApplyLeaveApplication,
   SerchByApplicationNumber,
+  FindAllStudentUsingDepartment,
+  ChangeDepartmentUsingUserId,
 };

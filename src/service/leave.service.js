@@ -161,13 +161,26 @@ const ApplyLeave = async (userId, userData) => {
   const userDetails = await UserModel.findById({ _id: userId });
   const username = userDetails.username;
   const useremail = userDetails.email;
+  const userDepartment = userDetails.departmentName;
+  const allDepartmentHrUsers = await UserModel.find({
+    departmentName: userDepartment,
+    role: "hr",
+  });
+  // console.log("all department data is ", allDepartmentHrUsers);
+  const HrMail = allDepartmentHrUsers[0].email;
+  // console.log("Hr Email is ", HrMail);
+
+  if (!allDepartmentHrUsers) {
+    throw new ErrorHandler("Department not same", 401);
+  }
   const Application_Number =
     username.slice(0, 3).toUpperCase() + "00" + generate;
-  console.log("useris ", finduser);
+  // console.log("useris ", finduser);
   if (finduser) {
     throw new ErrorHandler("Already user apply leave ", 401);
   }
-  const { employeeId, startDate, endDate, reason, leaveType } = userData;
+  const { employeeId, startDate, endDate, reason, leaveType, departmentName } =
+    userData;
 
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -198,7 +211,7 @@ const ApplyLeave = async (userId, userData) => {
 
   // Calculate the number of leave days
   const numberOfDays = await calculateDays(start, end);
-  console.log("total days is", numberOfDays);
+  // console.log("total days is", numberOfDays);
 
   if (numberOfDays === -1) {
     throw new Error("You can't apply for leave on weekends or holidays");
@@ -209,9 +222,9 @@ const ApplyLeave = async (userId, userData) => {
 
   // Find the user's leave type balance
   const findLeaveType = await LeaveTypeModel.findOne({ user: userId });
-  console.log("find leave Types is ", findLeaveType);
+  // console.log("find leave Types is ", findLeaveType);
   const differenceDays = numberOfDays.DiffernceDays;
-  console.log("diffrence data is ", differenceDays);
+  // console.log("diffrence data is ", differenceDays);
 
   if (!findLeaveType) {
     throw new Error("User is not found for leave types");
@@ -260,17 +273,27 @@ const ApplyLeave = async (userId, userData) => {
   try {
     const leave = await LeaveModel.create({
       employeeId: userId,
-      startDate: start,
-      endDate: end,
+      startDate,
+      endDate,
       reason,
       status: "pending", // Assuming default status is pending
       days,
       leaveType,
+      departmentName,
       application_no: Application_Number, // Save total days as string
     });
-    console.log("request leave is ", leave);
+    // console.log("request leave is ", leave);
     await SendMailLeaveAppliation(
       useremail,
+      username,
+      Application_Number,
+      startDate,
+      endDate,
+      days
+    );
+
+    await SendMailLeaveAppliation(
+      HrMail,
       username,
       Application_Number,
       startDate,
@@ -288,9 +311,10 @@ const ApplyLeave = async (userId, userData) => {
 const leaveApplicationData = {
   // Replace with actual employee ID
   startDate: "2024-06-03", // Example start date
-  endDate: "2024-06-17", // Example end date
+  endDate: "2024-06-05", // Example end date
   reason: "Vacation", // Example reason for leave
-  status: "pending", // Example status
+  status: "pending",
+  departmentName: "marketing", // Example status
   // Example application number
   block: false, // Example block status
   DateAndtime: new Date(),
@@ -298,7 +322,7 @@ const leaveApplicationData = {
   // Will be calculated based on start and end date
 };
 
-// ApplyLeave("66497dca7ee0abf5d8160dd1", leaveApplicationData);
+// ApplyLeave("66619a728e66117e0715c2ed", leaveApplicationData);
 // 😁😁😁😁😁
 const findLeaveTypeusingId = async (userID) => {
   try {
@@ -347,7 +371,7 @@ const updateLeaveTypes = async (userID, updateObject) => {
       throw new Error("Leave not found");
     }
 
-    console.log("Updated leave types:", updatedLeave);
+    // console.log("Updated leave types:", updatedLeave);
     return updatedLeave;
   } catch (error) {
     console.log("Error:", error.message);
@@ -387,7 +411,7 @@ const updateApplicationByid = async (leaveId, updateData) => {
 
   // Calculate the number of leave days
   const numberOfDays = await calculateDays(start, end);
-  console.log("total days is", numberOfDays);
+  // console.log("total days is", numberOfDays);
 
   if (numberOfDays === -1) {
     throw new Error("You can't apply for leave on weekends or holidays");
@@ -476,7 +500,7 @@ const updateApplicationByid = async (leaveId, updateData) => {
       endDate,
       days
     );
-    console.log("Leave request updated successfully", leaveRequest);
+    // console.log("Leave request updated successfully", leaveRequest);
     return leaveRequest;
   } catch (error) {
     console.log(error);
@@ -534,7 +558,7 @@ const updateApplicationByApplicationID = async (
   }
 
   // Fetch holidays and check if the start date is a holiday
-  console.log("start date is ", start.getFullYear());
+  // console.log("start date is ", start.getFullYear());
   const holidays = await HolidaysDays(start.getFullYear(), start.getMonth());
   // console.log("holidays array is ", holidays);
   const HolidaysArray = holidays.map((date) => date.Holidays_Date);
@@ -547,7 +571,7 @@ const updateApplicationByApplicationID = async (
 
   // Calculate the number of leave days
   const numberOfDays = await calculateDays(start, end);
-  console.log("total days is", numberOfDays);
+  // console.log("total days is", numberOfDays);
 
   if (numberOfDays === -1) {
     throw new Error("You can't apply for leave on weekends or holidays");
@@ -560,10 +584,10 @@ const updateApplicationByApplicationID = async (
   // Find the leave request by application number
   const leaveRequest = await LeaveModel.findOne({ application_no });
   const userdetails = await UserModel.findOne({ _id: leaveRequest.employeeId });
-  console.log("user details is ", userdetails);
+  // console.log("user details is ", userdetails);
   const useremail = userdetails.email;
   const username = userdetail.username;
-  console.log("leave request is ", leaveRequest);
+  // console.log("leave request is ", leaveRequest);
   if (!leaveRequest) {
     throw new Error("Leave request not found");
   }
@@ -632,7 +656,7 @@ const updateApplicationByApplicationID = async (
       endDate,
       days
     );
-    console.log("Leave request updated successfully", leaveRequest);
+    // console.log("Leave request updated successfully", leaveRequest);
     return leaveRequest;
   } catch (error) {
     console.log(error);
@@ -698,7 +722,7 @@ const SearchbyApplicationNumber = async (Serachdata) => {
     application_no: { $regex: Serachdata, $options: "i" },
   }).select("-_id");
 
-  console.log("Search user is ", user);
+  // console.log("Search user is ", user);
   if (!user) {
     throw new ErrorHandler(
       `User is not found for This applicaiton ${application_no}`
@@ -729,7 +753,7 @@ const ApprovedLeave = async (userid) => {
   // console.log("totalleave", totalleave, "second time ", data.endDate);
   const useremail = datausermodel.email;
   const username = datausermodel.username;
-  console.log("data is form approved system ", userdata);
+  // console.log("data is form approved system ", userdata);
 
   if (!userdata) {
     throw new ErrorHandler("User is not found", 401);
@@ -757,9 +781,9 @@ const ApprovedLeave = async (userid) => {
 const RejectedLeave = async (userid, userdata1) => {
   const { reason } = userdata1;
   const leaves = await LeaveModel.findById({ _id: userid });
-  console.log("Leave user is ", leaves);
+  // console.log("Leave user is ", leaves);
   const userdata = await UserModel.findById({ _id: leaves.employeeId });
-  console.log("user data is ", userdata);
+  // console.log("user data is ", userdata);
   const useremail = userdata.email;
 
   const username = userdata.username;
@@ -789,7 +813,7 @@ const RejectedLeave = async (userid, userdata1) => {
 
   // Save each leave document
   leaves.save();
-  console.log("updated rejected leave", leaves);
+  // console.log("updated rejected leave", leaves);
   await RejectApplicationEmailTemplate(
     useremail,
     username,
@@ -867,7 +891,7 @@ const SomedataReason = {
 const ReapplyLeaveApplication = async (userId, userData) => {
   try {
     const { startDate, endDate, reason } = userData;
-    console.log("User ID is:", userId);
+    // console.log("User ID is:", userId);
 
     // Check if all required fields are provided
     if (!startDate || !endDate || !reason) {
@@ -878,7 +902,7 @@ const ReapplyLeaveApplication = async (userId, userData) => {
 
     // Find leave data for the user
     const data = await LeaveModel.findOne({ employeeId: userId });
-    console.log("Reapply data:", data);
+    // console.log("Reapply data:", data);
 
     if (!data) {
       throw new ErrorHandler("No previous leave application found", 404);
@@ -901,7 +925,7 @@ const ReapplyLeaveApplication = async (userId, userData) => {
 
       // Save the updated leave data
       await data.save();
-      console.log("Your data is sent and updated successfully", data);
+      // console.log("Your data is sent and updated successfully", data);
       return data;
     }
   } catch (error) {

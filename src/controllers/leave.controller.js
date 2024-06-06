@@ -12,7 +12,7 @@ const updateApplicationById = catchAsync(async (req, res) => {
     req.user._id,
     req.body
   );
-  console.log("updated application for controller", leave);
+  // console.log("updated application for controller", leave);
   ApiResponse(res, 200, "Application is updated Successfully", leave);
 });
 
@@ -78,7 +78,7 @@ const findLeaveWithId = catchAsync(async (req, res) => {
 });
 const findLeaveWithIdAdmin = catchAsync(async (req, res) => {
   const data = await LeaveService.findLeaveTypeusingId(req.query.UserId);
-  console.log("datais ", data);
+  // console.log("datais ", data);
   ApiResponse(res, 200, "Date Fetched successfully", data);
 });
 
@@ -87,7 +87,7 @@ const UpdateAllLeaveType = catchAsync(async (req, res) => {
     "66595b843911fa076762c6b0",
     req.body
   );
-  console.log("data s ", data);
+  // console.log("data s ", data);
   ApiResponse(res, 200, "Date Fetched successfully", data);
 });
 

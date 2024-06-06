@@ -22,7 +22,7 @@ const resetPassword = catchAsync(async (req, res) => {
 });
 
 const LogoutUser = catchAsync(async (req, res) => {
-  console.log(req.user);
+  // console.log(req.user);
   const tokenId = await HrService.Logoutuser(req.user._id);
   await AdminService.Logoutuser(tokenId);
 

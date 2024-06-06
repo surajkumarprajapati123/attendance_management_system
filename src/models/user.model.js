@@ -36,10 +36,22 @@ const UserSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["employee", "admin", "hr"],
+      // enum: ["employee", "admin", "hr",""],
       default: "employee",
     },
     isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    departmentName: {
+      type: String,
+      default: "technical",
+      required: true,
+    },
+    departmentHead: {
+      type: String,
+    },
+    assign: {
       type: Boolean,
       default: false,
     },
