@@ -11,6 +11,10 @@ The Attendance Management System is a web-based application developed using Node
 - Attendance History: Employees can view their attendance history.
 - Leave Management: Employees can request leave through the system.
 - Admin Panel: Administrators can manage users, attendance, and leave requests.
+- Additional Features:
+  - Live Location Attendance: Employees can mark their attendance with live location details.
+  - Holidays Dates: Holidays dates are shown in the system for better planning.
+  - HR Role: HR role functionality is added for managing employee-related tasks.
 
 ## Technologies Used
 
@@ -32,4 +36,3 @@ The Attendance Management System is a web-based application developed using Node
 
 1. Clone the repository:
 
- https://github.com/surajkumarprajapati123/attendance-management-system.git
