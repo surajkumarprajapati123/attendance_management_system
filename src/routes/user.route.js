@@ -8,9 +8,7 @@ const upload = require("../middleware/multer");
 
 const router = express.Router();
 
-router
-  .route("/create")
-  .post(upload.single("avatar"), UserController.RegisterUser);
+router.route("/create").post(UserController.RegisterUser);
 router.route("/login").post(UserController.LoginUser);
 router.route("/forgot-link").post(UserController.ForgatePassword);
 router.route("/reset/:token").post(UserController.ResetPassword);
@@ -31,8 +29,40 @@ router.get("/test", Auth, (req, res) => {
   res.send("testin routng is working");
 });
 
+router
+  .route("/avatar-upload")
+  .patch(Auth, upload.single("avatar"), UserController.UploadAvatar);
+
 module.exports = router;
 // Register Schema
+
+/**
+ * @swagger
+ * /user/avatar-upload:
+ *   patch:
+ *     summary: Upload user avatar
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *                 description: Choose an image file for your avatar
+ *     responses:
+ *       "200":
+ *         description: Avatar uploaded successfully
+ *       "400":
+ *         description: Bad request, check the request body
+ *       "401":
+ *         $ref: '#/components/responses/UnauthorizedError'
+ */
 
 /**
  * @swagger
@@ -145,7 +175,7 @@ module.exports = router;
  *     requestBody:
  *       required: true
  *       content:
- *         multipart/form-data:   # Use multipart/form-data for file uploads
+ *         application/json:
  *           schema:
  *             type: object
  *             required:
@@ -153,7 +183,6 @@ module.exports = router;
  *               - email
  *               - password
  *               - username
- *               - avatar
  *               - departmentName  # Add departmentName to the required fields
  *             properties:
  *               name:
@@ -169,10 +198,6 @@ module.exports = router;
  *                 format: password
  *                 minLength: 8
  *                 description: At least one number and one letter
- *               avatar:
- *                 type: string
- *                 format: binary   # Indicate that this field represents binary data (file)
- *                 description: Choose an image file for your avatar
  *               departmentName:
  *                 type: string
  *                 description: The name of the department the user belongs to
