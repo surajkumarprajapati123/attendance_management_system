@@ -613,7 +613,6 @@ const FindOutTimeAttendanceByMonthByUserid = async (
   month,
   numberOfDays
 ) => {
-  // console.log("working 1");
   const attendanceByMonth = await AttendanceModel.aggregate([
     {
       $match: {
