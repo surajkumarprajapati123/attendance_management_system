@@ -278,7 +278,10 @@ const updateDepartmentHead = async (UserId, DepartmentDate) => {
   const { permission, departmentName } = DepartmentDate;
   let user = await UserModel.findById(UserId);
 
-  if (user.departmentName === departmentName) {
+  if (!user.isVerified) {
+    throw new ErrorHandler("First verify email ", 401);
+  }
+  if (user.departmentName === departmentName && user.role !== "hr") {
     user.role = "hr";
     user.departmentHead = permission;
     user.assign = true;
@@ -286,7 +289,10 @@ const updateDepartmentHead = async (UserId, DepartmentDate) => {
     await user.save();
     return user;
   } else {
-    throw new ErrorHandler("Department not match", 401);
+    throw new ErrorHandler(
+      "Department not match,all ready Team head Assign ",
+      401
+    );
   }
 
   // console.log("user updated data is ", user);
@@ -296,7 +302,7 @@ const DepartmentDate = {
   permission: "Team Lead",
   departMentName: "sales",
 };
-// updateDepartmentHead("66614c435408c08b28c666e4", DepartmentDate).then(
+// updateDepartmentHead("66619ab949d4a762b0201696", DepartmentDate).then(
 //   (resulte) => {
 //     console.log("resulte is ", resulte);
 //   }

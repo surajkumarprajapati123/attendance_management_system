@@ -19,9 +19,6 @@ const RegisterUser = async (req, userdata) => {
 
   const { name, email, username, password, role, departmentName } = userdata;
 
-  if (password.length == 0) {
-    throw new ErrorHandler("Password must be between 3  to 8 character");
-  }
   if (!name && !email && !username && !password) {
     throw new ErrorHandler("All fields are required", 401);
   } else if (!password) {
@@ -37,9 +34,9 @@ const RegisterUser = async (req, userdata) => {
     throw new ErrorHandler("usernname is required", 401);
   }
 
-  if (password.length < 1 || password.length < 3 || password.length > 8) {
-    throw new ErrorHandler("Password must be between 3 to 8 character");
-  }
+  // if (password.length < 1 || password.length < 3 || password.length > 8) {
+  //   throw new ErrorHandler("Password must be between 3 to 8 character");
+  // }
   if (role == "admin") {
     throw new ErrorHandler("You are not create to this role", 401);
   }
@@ -48,18 +45,19 @@ const RegisterUser = async (req, userdata) => {
     throw new ErrorHandler("Already Register User", 401);
   }
   // // console.log("req.file", req.file);
-  const avatar = req.file?.path;
-  // console.log("avatart", avatar);
-  const avatarimage = await UploadfileOnCloudinary(avatar);
+  // const avatar = req.file?.path;
+  // // console.log("avatart", avatar);
+  // const avatarimage = await UploadfileOnCloudinary(avatar);
   // console.log("avatarimage is ", avatarimage);
-  if (!avatar) {
-    throw new ErrorHandler("Select the avatar/profile image", 401);
-  }
+  // if (!avatar) {
+  //   throw new ErrorHandler("Select the avatar/profile image", 401);
+  // }
   const AlredyUsername = await UserNameModel.findOne({ username });
   if (AlredyUsername) {
     throw new ErrorHandler("This username is already use other user", 401);
   } else {
-    user = await UserModel.create({ ...userdata, avatar: avatarimage.url });
+    // user = await UserModel.create({ ...userdata, avatar: avatarimage.url });
+    user = await UserModel.create(userdata);
     // user = await UserModel.create(userdata);
 
     await UserNameModel.create({
@@ -87,6 +85,41 @@ const RegisterUser = async (req, userdata) => {
 // RegisterUser("d", userData).then((resulte) => {
 //   console.log("user is created ", resulte);
 // });
+const uploadAvatar = async (req) => {
+  try {
+    // Get the file path from the request object
+    const avatarPath = req.file?.path;
+
+    if (!avatarPath) {
+      throw new Error("Avatar image file path not found");
+    }
+
+    // Upload the file to Cloudinary
+    const avatarImage = await UploadfileOnCloudinary(avatarPath);
+
+    if (!avatarImage || !avatarImage.url) {
+      throw new Error("Failed to upload avatar to Cloudinary");
+    }
+
+    // Update the user record with the new avatar URL
+    const user = await UserModel.findByIdAndUpdate(
+      req.user._id,
+      { avatar: avatarImage.url },
+      { new: true } // Option to return the updated document
+    );
+
+    if (!user) {
+      throw new Error("Failed to update user record");
+    }
+
+    // console.log("Avatar updated successfully:", user);
+    return user;
+  } catch (error) {
+    console.error("Error uploading avatar:", error);
+    return { success: false, message: error.message };
+  }
+};
+
 const Login = async (userData) => {
   const { password, username, email } = userData;
   // console.log("login password", password);
@@ -546,4 +579,5 @@ module.exports = {
   Logoutuser,
   useridfindbytoken,
   updateAvatar,
+  uploadAvatar,
 };

@@ -120,6 +120,14 @@ const FindAttendanceByMonthByAdminOnlyUserID = catchAsync(async (req, res) => {
   ApiResponse(res, 200, " data Fetched successfully ", attendance);
 });
 
+const FindAttendaceUsingDays = catchAsync(async (req, res) => {
+  const attendance = await AttendanceService.FindOutTimeAttendanceByMonthByDays(
+    req.body.year,
+    req.body.month,
+    req.body.numberOfDays
+  );
+  ApiResponse(res, 200, " data Fetched successfully ", attendance);
+});
 module.exports = {
   TakingAttendance,
   TakingAttendaceByMannual,
@@ -134,4 +142,5 @@ module.exports = {
   FindAllAbsentUuser,
   FindAttendanceByMonthByAdminOnly,
   FindAttendanceByMonthByAdminOnlyUserID,
+  FindAttendaceUsingDays,
 };

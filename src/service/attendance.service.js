@@ -14,7 +14,7 @@ const takingLocation = async () => {
     let obj = {};
     const data = await response.json();
 
-    console.log("Location is ", data);
+    // console.log("Location is ", data);
     obj = {
       Country_Name: data.country_name,
       State: data.state_prov,
@@ -71,7 +71,7 @@ const TakingAttendanceMannual = async (userid, userdata) => {
     status: "present",
     istime: true,
   });
-  console.log("New attendance is mannul create", attendance);
+  // console.log("New attendance is mannul create", attendance);
   return attendance;
 };
 const userdatea = {
@@ -86,7 +86,7 @@ const TakeAttendance = async (userid) => {
   }
   const newObject = await takingLocation();
 
-  console.log("locatio form taking attendance", newObject);
+  // console.log("locatio form taking attendance", newObject);
   const attendance = await AttendanceModel.create({
     userid,
     // Intime,
@@ -94,7 +94,7 @@ const TakeAttendance = async (userid) => {
     status: "present",
     istime: true,
   });
-  console.log("Create Attendance data is ", attendance);
+  // console.log("Create Attendance data is ", attendance);
   return attendance;
 };
 
@@ -191,7 +191,7 @@ const FindAttendaceByMonth = async (userId) => {
     };
   });
 
-  console.log("Attendance by month code", attendanceObj);
+  // console.log("Attendance by month code", attendanceObj);
   return attendanceObj;
 };
 
@@ -255,7 +255,7 @@ const findAttendanceByMonthName = async (MonthName) => {
 
   // const totalPresentUsers = attendanceByMonthName.length;
   // console.log("attendanceByMonthName", attendanceByMonthName);
-  console.log("Total present users:", obj);
+  // console.log("Total present users:", obj);
   // console.log("Attendance data:", attendanceByMonthName);
 
   return obj;
@@ -322,7 +322,7 @@ const findAllPresentUser = async () => {
     { TotalAttendaceUser: totalAttendaceUser },
   ];
 
-  console.log("Output object is ", output);
+  // console.log("Output object is ", output);
   return output;
 };
 
@@ -426,10 +426,10 @@ const OutTimeAttendance = async (userid) => {
       attendance.status = "absent";
       attendance.Outtime = currentTiem;
       await attendance.save();
-      console.log(
-        "Attendance updated to absent due to date mismatch:",
-        attendance
-      );
+      // console.log(
+      //   "Attendance updated to absent due to date mismatch:",
+      //   attendance
+      // );
       return attendance;
     }
 
@@ -437,26 +437,26 @@ const OutTimeAttendance = async (userid) => {
     const diffMinutes = Math.abs(Math.floor(diffMilliseconds / (1000 * 60)));
     const diffHours = Math.floor(diffMinutes / 60);
 
-    console.log("Difference in minutes:", diffMinutes);
-    console.log("Database time:", convertIntime.toLocaleTimeString());
-    console.log("Present time:", currentTiem.toLocaleTimeString());
+    // console.log("Difference in minutes:", diffMinutes);
+    // console.log("Database time:", convertIntime.toLocaleTimeString());
+    // console.log("Present time:", currentTiem.toLocaleTimeString());
     // console.log("Total working hours ", process.env.WORKING_HOURS);
     if (diffHours > process.env.WORKING_HOURS) {
       attendance.status = "present";
       attendance.Outtime = undefined;
       await attendance.save();
-      console.log(
-        "Attendance marked as present within allowed time:",
-        attendance
-      );
+      // console.log(
+      //   "Attendance marked as present within allowed time:",
+      //   attendance
+      // );
     } else {
       attendance.status = "absent";
       attendance.Outtime = currentTiem;
       await attendance.save();
-      console.log(
-        "Attendance marked as absent outside allowed time:",
-        attendance
-      );
+      // console.log(
+      //   "Attendance marked as absent outside allowed time:",
+      //   attendance
+      // );
     }
 
     return attendance;
@@ -613,7 +613,7 @@ const FindOutTimeAttendanceByMonthByUserid = async (
   month,
   numberOfDays
 ) => {
-  console.log("working 1");
+  // console.log("working 1");
   const attendanceByMonth = await AttendanceModel.aggregate([
     {
       $match: {

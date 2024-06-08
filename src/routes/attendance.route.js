@@ -44,8 +44,60 @@ router
 router
   .route("/absent-present-range-admin/:UserId")
   .post(AdminAuth, AttendanceController.FindAttendanceByMonthByAdminOnlyUserID);
+router
+  .route("/year-month-days")
+  .post(AttendanceController.FindAttendaceUsingDays);
 
 module.exports = router;
+/**
+ * @swagger
+ * /attendance/year-month-days:
+ *   post:
+ *     summary: Retrieve attendance data for a specific year, month, and number of days
+ *     tags: [Attendance]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - year
+ *               - month
+ *               - numberOfDays
+ *             properties:
+ *               year:
+ *                 type: integer
+ *                 minimum: 1970
+ *                 description: The year for which to retrieve attendance data
+ *               month:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *                 description: The month for which to retrieve attendance data (1-12)
+ *               numberOfDays:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 31
+ *                 description: The number of days for which to retrieve attendance data
+ *     responses:
+ *       "200":
+ *         description: Attendance data fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Data fetched successfully"
+ *                 attendance:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Attendance'
+ *       "400":
+ *         description: Bad request, check the request body
+ */
 
 /**
  * @swagger

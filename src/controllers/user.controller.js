@@ -31,6 +31,11 @@ const RegisterUser = catchAsync(async (req, res) => {
   );
 });
 
+const UploadAvatar = catchAsync(async (req, res) => {
+  const user = await UserService.uploadAvatar(req);
+  ApiResponse(res, 201, "Image upload successfully", null);
+});
+
 const LoginUser = catchAsync(async (req, res) => {
   let user;
 
@@ -183,4 +188,5 @@ module.exports = {
   RefreshTokenController,
   LogoutUser,
   UpdateAvater,
+  UploadAvatar,
 };
