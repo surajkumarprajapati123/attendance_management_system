@@ -36,3 +36,5 @@ The Attendance Management System is a web-based application developed using Node
 
 1. Clone the repository:
 
+   https://github.com/surajkumarprajapati123/attendance_management_system
+
