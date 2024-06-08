@@ -597,8 +597,6 @@ const FindOutTimeAttendaceByCurrentMonth = async (userid) => {
   );
   const ouput = [...transformedData, { TotalAbsent: totalAbsent }];
 
-  // console.log("resulte is attendane by month is", ouput);
-
   return ouput;
 };
 
