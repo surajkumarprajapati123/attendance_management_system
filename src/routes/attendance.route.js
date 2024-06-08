@@ -46,9 +46,72 @@ router
   .post(AdminAuth, AttendanceController.FindAttendanceByMonthByAdminOnlyUserID);
 router
   .route("/year-month-days")
-  .post(AttendanceController.FindAttendaceUsingDays);
+  .post(Auth, AttendanceController.FindAttendaceUsingDays);
+router
+  .route("/year-month-days/:userID")
+  .post(AdminAuth, AttendanceController.FindAttendaceUsingDaysAdmin);
 
 module.exports = router;
+/**
+ * @swagger
+ * /attendance/year-month-days/{userID}:
+ *   post:
+ *     summary: Retrieve attendance data for a specific user by month and number of days  ony admin side
+ *     tags: [Attendance]
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the user whose attendance data is to be retrieved
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - year
+ *               - month
+ *               - numberOfDays
+ *             properties:
+ *               year:
+ *                 type: integer
+ *                 minimum: 1970
+ *                 description: The year for which to retrieve attendance data
+ *               month:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *                 description: The month for which to retrieve attendance data (1-12)
+ *               numberOfDays:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 31
+ *                 description: The number of days for which to retrieve attendance data
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       "200":
+ *         description: Attendance data fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Attendance data fetched successfully"
+ *                 attendance:
+ *                   type: object
+ *                   description: Attendance data grouped by day, with present and absent counts, and user details
+ *       "400":
+ *         description: Bad request, check the request body
+ *       "401":
+ *         description: Unauthorized, authentication token is missing or invalid
+ */
+
 /**
  * @swagger
  * /attendance/year-month-days:
@@ -80,6 +143,8 @@ module.exports = router;
  *                 minimum: 1
  *                 maximum: 31
  *                 description: The number of days for which to retrieve attendance data
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       "200":
  *         description: Attendance data fetched successfully

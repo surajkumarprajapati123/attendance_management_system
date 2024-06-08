@@ -597,8 +597,6 @@ const FindOutTimeAttendaceByCurrentMonth = async (userid) => {
   );
   const ouput = [...transformedData, { TotalAbsent: totalAbsent }];
 
-  // console.log("resulte is attendane by month is", ouput);
-
   return ouput;
 };
 
@@ -613,7 +611,6 @@ const FindOutTimeAttendanceByMonthByUserid = async (
   month,
   numberOfDays
 ) => {
-  // console.log("working 1");
   const attendanceByMonth = await AttendanceModel.aggregate([
     {
       $match: {
@@ -709,11 +706,17 @@ const FindOutTimeAttendanceByMonthByUserid = async (
 };
 
 const FindOutTimeAttendanceByMonthByDays = async (
+  userId,
   year,
   month,
   numberOfDays
 ) => {
   const attendanceByMonth = await AttendanceModel.aggregate([
+    {
+      $match: {
+        userid: new mongoose.Types.ObjectId(userId), // Match by userid
+      },
+    },
     {
       $addFields: {
         attendanceYear: { $year: "$createdAt" },
@@ -805,9 +808,9 @@ const FindOutTimeAttendanceByMonthByDays = async (
 // // Sample call to the function
 // const year = 2024;
 // const month = 6;
-// const numberOfDays = 10; // Assuming you want data for the first 10 days of the month
-// FindOutTimeAttendanceByMonthByUserid(
-//   "665aaf32f612041756a2800a",
+// const numberOfDays = 7; // Assuming you want data for the first 10 days of the month
+// FindOutTimeAttendanceByMonthByDays(
+//   "66631c2abaa3652e4f50230c",
 //   year,
 //   month,
 //   numberOfDays
