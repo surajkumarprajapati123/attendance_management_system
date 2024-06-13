@@ -15,58 +15,68 @@ const deleteFileFromCloudinary = require("../utils/DeleteUserAvatar");
 const randomString = require("randomstring");
 
 const RegisterUser = async (req, userdata) => {
-  let user;
-
+  // Destructure userdata to extract required fields
   const { name, email, username, password, role, departmentName } = userdata;
 
-  if (!name && !email && !username && !password) {
+  // Check if all required fields are provided and not empty
+  if (
+    !name.trim() ||
+    !email.trim() ||
+    !username.trim() ||
+    !password.trim() ||
+    !departmentName.trim()
+  ) {
     throw new ErrorHandler("All fields are required", 401);
-  } else if (!password) {
-    throw new ErrorHandler("Password is required", 401);
-  } else if (!name) {
-  } else if (!departmentName) {
-    throw new ErrorHandler("departmentName is required", 401);
-  } else if (!name) {
-    throw new ErrorHandler("Name is required", 401);
-  } else if (!email) {
-    throw new ErrorHandler("Email is required", 401);
-  } else if (!username) {
-    throw new ErrorHandler("usernname is required", 401);
   }
 
-  // if (password.length < 1 || password.length < 3 || password.length > 8) {
-  //   throw new ErrorHandler("Password must be between 3 to 8 character");
-  // }
-  if (role == "admin") {
-    throw new ErrorHandler("You are not create to this role", 401);
-  }
-  user = await UserModel.findOne({ email });
-  if (user) {
-    throw new ErrorHandler("Already Register User", 401);
-  }
-  // // console.log("req.file", req.file);
-  // const avatar = req.file?.path;
-  // // console.log("avatart", avatar);
-  // const avatarimage = await UploadfileOnCloudinary(avatar);
-  // console.log("avatarimage is ", avatarimage);
-  // if (!avatar) {
-  //   throw new ErrorHandler("Select the avatar/profile image", 401);
-  // }
-  const AlredyUsername = await UserNameModel.findOne({ username });
-  if (AlredyUsername) {
-    throw new ErrorHandler("This username is already use other user", 401);
-  } else {
-    // user = await UserModel.create({ ...userdata, avatar: avatarimage.url });
-    user = await UserModel.create(userdata);
-    // user = await UserModel.create(userdata);
-
-    await UserNameModel.create({
-      userid: user._id,
-      username: username,
-    });
+  // Check if email is in a valid format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new ErrorHandler("Invalid email format", 401);
   }
 
-  // console.log("useris", user);
+  // Check if username and password contain spaces or underscores
+  const invalidCharsRegex = /[\s_]/;
+  if (invalidCharsRegex.test(username) || invalidCharsRegex.test(password)) {
+    throw new ErrorHandler(
+      "Username and password cannot contain spaces or underscores",
+      401
+    );
+  }
+
+  // Check password length
+  if (password.length < 3 || password.length > 8) {
+    throw new ErrorHandler("Password must be between 3 to 8 characters", 401);
+  }
+
+  // Check role
+  if (role === "admin") {
+    throw new ErrorHandler(
+      "You are not allowed to create users with this role",
+      401
+    );
+  }
+
+  // Check if user already exists with the same email
+  const existingUserWithEmail = await UserModel.findOne({ email });
+  if (existingUserWithEmail) {
+    throw new ErrorHandler("User with this email already exists", 401);
+  }
+
+  // Check if user already exists with the same username
+  const existingUserWithUsername = await UserNameModel.findOne({ username });
+  if (existingUserWithUsername) {
+    throw new ErrorHandler("User with this username already exists", 401);
+  }
+
+  // Create new user
+  const user = await UserModel.create(userdata);
+
+  // Create a record in UserNameModel
+  await UserNameModel.create({
+    userid: user._id,
+    username: username,
+  });
 
   return user;
 };
